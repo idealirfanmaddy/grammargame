@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sentence Movers AR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mulish:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#EAF1FC; --surface:#FFFFFF; --surface-2:#F3F8FF;
+    --ink:#0F2038; --ink-soft:#57657D; --line:#D8E4F7;
+    --brand-blue:#0047B6; --brand-blue-deep:#00348A; --brand-blue-soft:#E4EDFC;
+    --brand-red:#D81F2A; --brand-amber:#FFB300; --brand-amber-deep:#C98800;
+    --chip:#0047B6; --ui-accent:#0047B6; --success:#1FA25A; --error:#D81F2A;
+    --font-display:'Baloo 2', system-ui, sans-serif;
+    --font-body:'Mulish', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:var(--font-body); overflow:hidden; }
+  body{ position:relative; }
+  body::before, body::after{
+    content:''; position:fixed; border-radius:50%; opacity:.4; z-index:0; pointer-events:none;
+  }
+  body::before{ width:280px; height:280px; background:radial-gradient(circle, var(--brand-amber), transparent 70%); top:-100px; right:-90px; }
+  body::after{ width:340px; height:340px; background:radial-gradient(circle, var(--brand-blue-soft), transparent 70%); bottom:-140px; left:-110px; }
+  .wrap{ position:relative; z-index:1; max-width:520px; margin:0 auto; padding:40px 22px 60px; height:100%; overflow-y:auto; }
+  .screen{ display:none; height:100%; }
+  .screen.active{ display:block; }
+
+  .brand-dots{ display:flex; gap:6px; margin-bottom:16px; }
+  .brand-dots span{ width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .brand-dots span:nth-child(1){ background:var(--brand-blue); }
+  .brand-dots span:nth-child(2){ background:var(--brand-red); }
+  .brand-dots span:nth-child(3){ background:var(--brand-amber); }
+
+  .eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-blue); margin:0 0 8px; font-weight:600; }
+  h1{ font-family:var(--font-display); font-weight:800; font-size:1.9rem; margin:0 0 10px; text-wrap:balance; }
+  .lede{ color:var(--ink-soft); font-size:15px; margin:0 0 28px; }
+
+  .level-card{
+    text-align:left; cursor:pointer; border:1px solid var(--line); border-left:6px solid var(--brand-blue); background:var(--surface);
+    border-radius:14px; padding:18px; font-family:var(--font-body); color:var(--ink); width:100%;
+    display:flex; flex-direction:column; gap:8px; margin-bottom:14px; box-shadow:0 3px 10px rgba(15,32,56,.06);
+  }
+  .level-card.accent-red{ border-left-color:var(--brand-red); }
+  .level-card h3{ font-family:var(--font-display); font-size:1.15rem; margin:0; display:flex; align-items:center; gap:8px; }
+  .level-card .level-icon{ font-size:1.25rem; line-height:1; }
+  .level-card p{ margin:0; font-size:13.5px; color:var(--ink-soft); }
+  .badge-done{ font-family:var(--font-mono); font-weight:700; font-size:11px; letter-spacing:1px; background:var(--brand-amber); color:#3A2900; padding:2px 8px; border-radius:99px; margin-left:auto; }
+
+  .xp-badge{
+    display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-weight:700; font-size:12px;
+    background:var(--brand-blue-soft); color:var(--brand-blue-deep); padding:6px 13px; border-radius:99px; margin-bottom:14px;
+  }
+
+  .btn{
+    font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff;
+    background:linear-gradient(180deg, var(--brand-blue), var(--brand-blue-deep)); border:none; padding:13px 22px; border-radius:99px; cursor:pointer;
+    box-shadow:0 4px 0 var(--brand-blue-deep), 0 8px 16px rgba(0,71,182,.25); width:100%;
+  }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--brand-blue-deep); }
+  .btn.secondary{ background:var(--surface); color:var(--brand-blue); border:1.5px solid var(--brand-blue); box-shadow:none; }
+  .btn-back{ font-family:var(--font-mono); font-size:12px; background:none; border:1px solid var(--line); color:var(--ink-soft); padding:6px 12px; border-radius:99px; cursor:pointer; margin-bottom:18px; }
+
+  .panel{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:18px; font-size:14px; line-height:1.5; }
+  .panel ul{ margin:8px 0 0; padding-left:20px; }
+  .panel li::marker{ color:var(--brand-blue); }
+  .status-line{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); margin-top:14px; min-height:18px; }
+  .status-line.error{ color:var(--error); }
+
+  /* ---- AR screen ---- */
+  #screen-ar{ position:fixed; inset:0; z-index:50; }
+  #screen-ar.active{ display:flex; flex-direction:column; }
+  #cam-wrap{ position:relative; flex:1; overflow:hidden; background:#000; width:100%; height:100%; }
+  #video{ width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+
+  #question-banner{
+    position:absolute; top:0; left:0; right:0; padding:16px 18px 26px; z-index:5;
+    background:linear-gradient(to bottom, rgba(6,14,32,.88), rgba(6,14,32,.55) 65%, rgba(6,14,32,0));
+    color:#fff; font-family:var(--font-body); text-align:center;
+  }
+  #question-banner .qcount{
+    font-family:var(--font-mono); font-weight:700; font-size:10px; letter-spacing:.09em; text-transform:uppercase;
+    display:inline-block; margin-bottom:10px; padding:4px 11px; border-radius:99px;
+    background:var(--brand-amber); color:#3A2900;
+  }
+  #qtext{ display:block; font-family:var(--font-display); font-weight:700; font-size:22px; line-height:1.32; text-shadow:0 2px 10px rgba(0,0,0,.55); }
+
+  #chip-stack{
+    position:absolute; display:flex; flex-direction:column; gap:12px; align-items:stretch;
+    justify-content:center; transform:translate(-50%,-100%); z-index:4;
+    transition:left .18s ease, top .18s ease; width:min(86vw, 340px);
+  }
+  .ar-chip{
+    position:relative; font-family:var(--font-display); font-weight:700; font-size:16px; color:#fff;
+    background:linear-gradient(180deg, #3B7DDE, var(--brand-blue)); border:2px solid rgba(255,255,255,.6); border-radius:16px;
+    padding:14px 16px; width:100%;
+    text-align:center; line-height:1.28; cursor:pointer; word-break:break-word;
+    box-shadow:0 6px 16px rgba(0,20,60,.4); overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ar-chip .ring{ position:absolute; inset:-2px; border-radius:16px; pointer-events:none; opacity:0; }
+  .ar-chip.hovered .ring{ opacity:1; }
+  .ar-chip.correct{ background:linear-gradient(180deg, #35C57F, var(--success)); }
+  .ar-chip.incorrect{ background:linear-gradient(180deg, #E6555F, var(--brand-red)); }
+  .ar-chip.dimmed{ opacity:.4; }
+
+  #cursor-dot{
+    position:absolute; width:26px; height:26px; border-radius:50%; background:rgba(255,179,0,.92);
+    border:3px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.3); transform:translate(-50%,-50%);
+    z-index:6; pointer-events:none; display:none;
+  }
+
+  #ar-feedback{
+    position:absolute; left:0; right:0; bottom:0; z-index:7; padding:16px;
+    background:linear-gradient(to top, rgba(6,14,32,.9), rgba(6,14,32,0));
+    color:#fff; display:none;
+  }
+  #ar-feedback.show{ display:block; }
+  #ar-feedback p{ margin:0 0 12px; font-size:14.5px; font-weight:600; text-align:center; }
+  #ar-feedback .ar-chip{ margin:0 auto; display:block; width:fit-content; background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900; font-weight:800; padding:12px 26px; }
+
+  #track-status{
+    position:absolute; top:8px; right:10px; z-index:8; display:flex; gap:6px;
+  }
+  .dot-badge{ font-family:var(--font-mono); font-size:9.5px; padding:3px 7px; border-radius:99px; background:rgba(0,0,0,.5); color:rgba(255,255,255,.55); }
+  .dot-badge.live{ color:#fff; background:var(--brand-blue); }
+  .dot-badge.streak{ font-weight:700; opacity:.5; transition:opacity .15s ease, background .15s ease, color .15s ease; }
+  .dot-badge.streak.active{ opacity:1; background:var(--brand-amber); color:#3A2900; }
+
+  #xp-toast{
+    position:absolute; z-index:9; font-family:var(--font-display); font-weight:800; font-size:16px;
+    color:var(--brand-amber); text-shadow:0 2px 8px rgba(0,0,0,.6); opacity:0; pointer-events:none;
+    transform:translate(-50%,-40%); white-space:nowrap;
+  }
+  #xp-toast.pop{ animation:xp-pop 900ms ease-out forwards; }
+  @keyframes xp-pop{
+    0%{ opacity:0; transform:translate(-50%,-30%) scale(.7); }
+    18%{ opacity:1; transform:translate(-50%,-55%) scale(1.05); }
+    100%{ opacity:0; transform:translate(-50%,-115%) scale(1); }
+  }
+
+  .result-stars{ font-size:2rem; letter-spacing:6px; margin:2px 0 16px; }
+
+  #gate-loading{ display:none; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); margin-top:14px; }
+  #gate-loading.show{ display:flex; }
+  .spinner{ width:14px; height:14px; border-radius:50%; border:2px solid var(--line); border-top-color:var(--ui-accent); animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  #screen-results{ position:relative; overflow:hidden; }
+  #confetti-layer{ position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+  #confetti-layer span{
+    position:absolute; top:-24px; width:8px; height:14px; border-radius:2px; opacity:.9;
+    animation:confetti-fall 2.6s ease-in forwards;
+  }
+  @keyframes confetti-fall{ to{ transform:translateY(70vh) rotate(560deg); opacity:0; } }
+  #screen-results > *:not(#confetti-layer){ position:relative; z-index:1; }
+  .result-emoji{ font-size:2.4rem; display:block; margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="wrap-outer">
+
+  <section id="screen-levels" class="screen active">
+    <div class="brand-dots"><span></span><span></span><span></span></div>
+    <div class="xp-badge">⭐ <span id="xp-total">0</span> XP</div>
+    <p class="eyebrow">Sentence Movers · AR</p>
+    <h1>Point to answer.</h1>
+    <p class="lede">Your answer choices float above your head in the camera. Point at one with your finger and hold for a second to pick it.</p>
+    <div id="level-list"></div>
+  </section>
+
+  <section id="screen-gate" class="screen">
+    <button class="btn-back" id="btn-back-gate">← Levels</button>
+    <h1 id="gate-title"></h1>
+    <div class="panel">
+      <strong>How to play</strong>
+      <ul>
+        <li>Prop your phone up so your head and one hand fit in frame.</li>
+        <li>Read the question, then point at your answer.</li>
+        <li>Hold your finger on it for about a second to lock it in.</li>
+        <li>Can't get pointing to work? You can always just tap an answer instead.</li>
+      </ul>
+    </div>
+    <button class="btn" id="btn-start-camera">▶ Turn on camera &amp; start</button>
+    <div id="gate-loading"><div class="spinner"></div><span id="gate-loading-text">Loading pointing &amp; face tracking…</span></div>
+    <p class="status-line" id="gate-status"></p>
+  </section>
+
+  <section id="screen-results" class="screen">
+    <div id="confetti-layer"></div>
+    <p class="eyebrow" id="results-eyebrow"></p>
+    <span class="result-emoji" id="results-emoji"></span>
+    <h1 id="results-title"></h1>
+    <div class="result-stars" id="results-stars"></div>
+    <p class="lede" id="results-score"></p>
+    <p class="lede" id="results-xp"></p>
+    <button class="btn" id="btn-retry">↺ Play again</button>
+    <button class="btn secondary" id="btn-results-back" style="margin-top:10px;">← Back to levels</button>
+  </section>
+
+</div>
+
+<section id="screen-ar" class="screen">
+  <div id="cam-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <div id="track-status">
+      <span class="dot-badge streak" id="badge-streak">🔥 0</span>
+      <span class="dot-badge" id="badge-face">face</span>
+      <span class="dot-badge" id="badge-hand">hand</span>
+    </div>
+    <div id="question-banner">
+      <span class="qcount" id="qcount"></span>
+      <span id="qtext"></span>
+    </div>
+    <div id="chip-stack"></div>
+    <div id="cursor-dot"></div>
+    <div id="xp-toast"></div>
+    <div id="ar-feedback">
+      <p id="feedback-text"></p>
+      <button class="ar-chip" id="btn-continue">Continue →</button>
+    </div>
+  </div>
+</section>
+
+<script type="module">
+import { HandLandmarker, FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision";
+
+const LEVELS = [
+  {
+    id: 'question-formation',
+    title: 'Question Formation',
+    icon: '❓',
+    accent: 'blue',
+    tagline: 'Point to move the auxiliary and build a question.',
+    questions: [
+      {
+        prompt: 'Start: "She is happy." Which word has to move to ask a question?',
+        options: [ { text:'She', correct:false }, { text:'is', correct:true }, { text:'happy', correct:false } ],
+        explain: '"is" is the auxiliary — it\'s the piece that moves.'
+      },
+      {
+        prompt: 'In English yes/no questions like "She is happy." → "Is she happy?", which direction does the auxiliary move?',
+        options: [ { text:'To the front', correct:true }, { text:'To the end', correct:false }, { text:'Nowhere — it stays', correct:false } ],
+        explain: 'Yes/no questions move the auxiliary all the way to the front.'
+      },
+      {
+        prompt: 'Start: "She is happy." Which is the correctly formed question?',
+        options: [ { text:'Is she happy?', correct:true }, { text:'She is happy?', correct:false }, { text:'Happy she is?', correct:false } ],
+        explain: '"Is" fronts, "she" follows, the rest stays put.'
+      },
+      {
+        prompt: 'Start: "They are ready." Which is the correctly formed question?',
+        options: [ { text:'Are they ready?', correct:true }, { text:'They are ready?', correct:false }, { text:'Ready are they?', correct:false } ],
+        explain: 'Same move, new sentence: the auxiliary "are" fronts.'
+      },
+      {
+        prompt: 'Start: "He can swim." Which word moves to the front?',
+        options: [ { text:'He', correct:false }, { text:'can', correct:true }, { text:'swim', correct:false } ],
+        explain: 'Modal auxiliaries like "can" front too, not just "is/are".'
+      },
+      {
+        prompt: 'Which is the correctly formed question for "He can swim."?',
+        options: [ { text:'Can he swim?', correct:true }, { text:'He can swim?', correct:false }, { text:'Swim can he?', correct:false } ],
+        explain: '"Can" fronts, "he" follows, "swim" stays at the end.'
+      },
+      {
+        prompt: 'Start: "She likes tea." There\'s no auxiliary here to move — what does English add instead?',
+        options: [ { text:'does', correct:true }, { text:'is', correct:false }, { text:'has', correct:false } ],
+        explain: 'No auxiliary to front, so English inserts "do/does/did".'
+      },
+      {
+        prompt: 'Start: "She likes tea." Once "does" is added and fronted to form the question, what happens to "likes"?',
+        options: [ { text:'Stays "likes"', correct:false }, { text:'Changes to "like"', correct:true }, { text:'Changes to "liking"', correct:false } ],
+        explain: '"Does" carries the tense now, so the main verb drops back to its base form.'
+      },
+      {
+        prompt: 'Which is the correctly formed question for "She likes tea."?',
+        options: [ { text:'Does she like tea?', correct:true }, { text:'Does she likes tea?', correct:false }, { text:'Likes she tea?', correct:false } ],
+        explain: 'Insert "does", front it, and the main verb goes back to base form.'
+      },
+      {
+        prompt: 'Start: "They have finished." Which is the correctly formed question?',
+        options: [ { text:'Have they finished?', correct:true }, { text:'They have finished?', correct:false }, { text:'Do they have finished?', correct:false } ],
+        explain: '"Have" is already an auxiliary here, so it fronts directly — no "do" needed.'
+      },
+      {
+        prompt: 'Start: "The train arrives at noon." Which is the correctly formed question?',
+        options: [ { text:'Does the train arrive at noon?', correct:true }, { text:'Does the train arrives at noon?', correct:false }, { text:'Arrives the train at noon?', correct:false } ],
+        explain: '"Does" fronts as the inserted auxiliary, and "arrives" drops to its base form "arrive".'
+      },
+      {
+        prompt: 'Start: "The children were playing outside." Which word fronts to form the question?',
+        options: [ { text:'The children', correct:false }, { text:'were', correct:true }, { text:'playing', correct:false } ],
+        explain: '"Were" is the auxiliary here, so it\'s the piece that moves to the front.'
+      }
+    ]
+  },
+  {
+    id: 'passive-voice',
+    title: 'Passive Voice',
+    icon: '🔄',
+    accent: 'red',
+    tagline: 'Point to swap the spotlight from doer to receiver.',
+    questions: [
+      {
+        prompt: 'Start: "The cat chased the mouse." In the passive voice, which part becomes the new subject?',
+        options: [ { text:'The cat', correct:false }, { text:'chased', correct:false }, { text:'the mouse', correct:true } ],
+        explain: 'The object of the action moves to the front to become the subject.'
+      },
+      {
+        prompt: 'Start: "The cat chased the mouse." In the passive version, what happens to the verb "chased"?',
+        options: [ { text:'Stays "chased"', correct:false }, { text:'Becomes "was chased"', correct:true }, { text:'Becomes "chases"', correct:false } ],
+        explain: 'The verb changes form to passive: was/were + past participle.'
+      },
+      {
+        prompt: 'Start: "The cat chased the mouse." Which is the correctly formed passive sentence?',
+        options: [ { text:'The mouse was chased by the cat.', correct:true }, { text:'The cat was chased by the mouse.', correct:false }, { text:'The mouse chased by the cat.', correct:false } ],
+        explain: 'New subject, passive verb, then "by" + the original subject.'
+      },
+      {
+        prompt: 'Start: "The chefs prepared the meal." Which is the correctly formed passive sentence?',
+        options: [ { text:'The meal was prepared by the chefs.', correct:true }, { text:'The meal were prepared by the chefs.', correct:false }, { text:'The meal prepared by the chefs.', correct:false } ],
+        explain: 'The verb agrees with the NEW subject "the meal" (singular) — not the old one.'
+      },
+      {
+        prompt: 'Start: "The artist painted the mural." Which part becomes the new subject?',
+        options: [ { text:'The artist', correct:false }, { text:'painted', correct:false }, { text:'the mural', correct:true } ],
+        explain: 'Same move: the receiver of the action moves to the front.'
+      },
+      {
+        prompt: 'Which is the correctly formed passive sentence for "The artist painted the mural."?',
+        options: [ { text:'The mural was painted by the artist.', correct:true }, { text:'The artist was painted by the mural.', correct:false }, { text:'The mural painted by the artist.', correct:false } ],
+        explain: 'New subject, "was" + past participle, then "by" + the original subject.'
+      },
+      {
+        prompt: 'Start: "The manager reviews the reports." (present tense) What does "reviews" become in the passive?',
+        options: [ { text:'was reviewed', correct:false }, { text:'is reviewed', correct:true }, { text:'reviewing', correct:false } ],
+        explain: 'Present tense passive uses is/are + past participle, not was/were.'
+      },
+      {
+        prompt: 'Which is the correctly formed passive sentence for "The manager reviews the reports."?',
+        options: [ { text:'The reports are reviewed by the manager.', correct:true }, { text:'The reports is reviewed by the manager.', correct:false }, { text:'The reports was reviewed by the manager.', correct:false } ],
+        explain: '"Reports" is plural, so it needs "are", not "is" or "was".'
+      },
+      {
+        prompt: '"The window was broken." Why might "by ___" be left out here?',
+        options: [ { text:'The doer is unknown or unimportant', correct:true }, { text:"It's grammatically required to leave it out", correct:false }, { text:'Passive sentences never mention the doer', correct:false } ],
+        explain: 'The "by" phrase is optional — drop it when who did it doesn\'t matter.'
+      },
+      {
+        prompt: 'Start: "Volunteers clean the beach every month." Which is the correctly formed passive sentence?',
+        options: [ { text:'The beach is cleaned by volunteers every month.', correct:true }, { text:'The beach was cleaned by volunteers every month.', correct:false }, { text:'The beach cleaned by volunteers every month.', correct:false } ],
+        explain: 'Present tense, singular new subject "the beach" → "is cleaned".'
+      },
+      {
+        prompt: 'Start: "The company will launch the product next week." Which is the correctly formed passive sentence?',
+        options: [ { text:'The product will be launched by the company next week.', correct:true }, { text:'The product will launched by the company next week.', correct:false }, { text:'The product will be launch by the company next week.', correct:false } ],
+        explain: 'Future passive keeps "will", adds "be", then the past participle "launched".'
+      },
+      {
+        prompt: 'Start: "Someone has stolen my bike." Which is the correctly formed passive sentence?',
+        options: [ { text:'My bike has been stolen.', correct:true }, { text:'My bike has stolen.', correct:false }, { text:'My bike was stolen has.', correct:false } ],
+        explain: 'Present-perfect passive needs "been" between "has" and the past participle.'
+      }
+    ]
+  },
+  {
+    id: 'wh-movement',
+    title: 'Wh-Question Movement',
+    icon: '🧭',
+    accent: 'blue',
+    tagline: 'Point to send the wh-word all the way to the front.',
+    questions: [
+      {
+        prompt: 'Start: "She bought a car." To ask about "a car", which wh-word replaces it?',
+        options: [ { text:'What', correct:true }, { text:'Who', correct:false }, { text:'Where', correct:false } ],
+        explain: '"What" stands in for a thing — here, the object "a car".'
+      },
+      {
+        prompt: 'Start: "She bought a car." Which is the correctly formed wh-question?',
+        options: [ { text:'What did she buy?', correct:true }, { text:'What she bought?', correct:false }, { text:'She bought what?', correct:false } ],
+        explain: '"What" fronts, "did" is inserted and also fronts, and "bought" drops to base form "buy".'
+      },
+      {
+        prompt: 'Start: "Tom lives in Paris." To ask about the place "in Paris", which wh-word do you use?',
+        options: [ { text:'Where', correct:true }, { text:'What', correct:false }, { text:'Who', correct:false } ],
+        explain: '"Where" stands in for a place.'
+      },
+      {
+        prompt: 'Start: "Tom lives in Paris." Which is the correctly formed wh-question?',
+        options: [ { text:'Where does Tom live?', correct:true }, { text:'Where Tom lives?', correct:false }, { text:'Does Tom live where?', correct:false } ],
+        explain: '"Where" fronts all the way, "does" fronts too, and "lives" goes back to base form.'
+      },
+      {
+        prompt: 'Start: "Maria called her friend." Which part does the wh-word "who" replace here?',
+        options: [ { text:'Maria', correct:false }, { text:'called', correct:false }, { text:'her friend', correct:true } ],
+        explain: '"Who" is asking about the person being called — the object "her friend".'
+      },
+      {
+        prompt: 'Which is the correctly formed wh-question for "Maria called her friend." (asking about the object)?',
+        options: [ { text:'Who did Maria call?', correct:true }, { text:'Who Maria called?', correct:false }, { text:'Maria called who?', correct:false } ],
+        explain: 'Object wh-questions still need "did" fronted along with the wh-word.'
+      },
+      {
+        prompt: 'Start: "Maria called her friend." Now asking about the subject — who did the calling — which is correctly formed?',
+        options: [ { text:'Who called her friend?', correct:true }, { text:'Who did call her friend?', correct:false }, { text:'Did who call her friend?', correct:false } ],
+        explain: 'When the wh-word replaces the subject, it\'s already in front position — no "do" needed.'
+      },
+      {
+        prompt: 'Start: "The train leaves at 6pm." Which is the correctly formed wh-question asking about the time?',
+        options: [ { text:'When does the train leave?', correct:true }, { text:'When the train leaves?', correct:false }, { text:'The train leaves when?', correct:false } ],
+        explain: '"When" fronts, "does" fronts with it, "leaves" goes back to base form "leave".'
+      },
+      {
+        prompt: 'Start: "They are arguing because of money." Which is the correctly formed wh-question asking for the reason?',
+        options: [ { text:'Why are they arguing?', correct:true }, { text:'Why they are arguing?', correct:false }, { text:'Are they arguing why?', correct:false } ],
+        explain: '"Why" fronts, and since "are" is already an auxiliary, it fronts too — no "do" needed.'
+      },
+      {
+        prompt: 'Start: "She is talking to her manager." "Who" replaces "her manager", the object of "to". Which is the natural everyday wh-question?',
+        options: [ { text:'Who is she talking to?', correct:true }, { text:'Is she talking to who?', correct:false }, { text:'She is talking to who?', correct:false } ],
+        explain: 'Everyday English strands the preposition at the end: "to" stays behind while "who" moves to the front.'
+      },
+      {
+        prompt: 'Start: "He wants to buy a new laptop." Which is the correctly formed wh-question asking what he wants to buy?',
+        options: [ { text:'What does he want to buy?', correct:true }, { text:'What he wants to buy?', correct:false }, { text:'He wants to buy what?', correct:false } ],
+        explain: '"What" fronts with "does", and "wants" drops back to base form "want".'
+      },
+      {
+        prompt: 'In an embedded question like "I wonder what she bought," does the word order invert the way it does in a direct question ("What did she buy?")?',
+        options: [ { text:'No — the subject and verb stay in normal order', correct:true }, { text:'Yes, it always inverts the same way', correct:false }, { text:'Only when the wh-word is "who"', correct:false } ],
+        explain: 'Embedded questions keep statement word order ("she bought") — only direct questions trigger subject-auxiliary inversion.'
+      }
+    ]
+  }
+];
+
+const DWELL_MS = 850;
+
+const screens = {
+  levels: document.getElementById('screen-levels'),
+  gate: document.getElementById('screen-gate'),
+  ar: document.getElementById('screen-ar'),
+  results: document.getElementById('screen-results')
+};
+const resultsEyebrow = document.getElementById('results-eyebrow');
+const resultsTitle = document.getElementById('results-title');
+const resultsScore = document.getElementById('results-score');
+const btnRetry = document.getElementById('btn-retry');
+const btnResultsBack = document.getElementById('btn-results-back');
+const levelList = document.getElementById('level-list');
+const gateTitle = document.getElementById('gate-title');
+const gateStatus = document.getElementById('gate-status');
+const gateLoading = document.getElementById('gate-loading');
+const gateLoadingText = document.getElementById('gate-loading-text');
+const btnStartCamera = document.getElementById('btn-start-camera');
+const btnBackGate = document.getElementById('btn-back-gate');
+
+const video = document.getElementById('video');
+const camWrap = document.getElementById('cam-wrap');
+const chipStack = document.getElementById('chip-stack');
+const questionBanner = document.getElementById('question-banner');
+const cursorDot = document.getElementById('cursor-dot');
+const qcountEl = document.getElementById('qcount');
+const qtextEl = document.getElementById('qtext');
+const feedbackEl = document.getElementById('ar-feedback');
+const feedbackTextEl = document.getElementById('feedback-text');
+const btnContinue = document.getElementById('btn-continue');
+const badgeFace = document.getElementById('badge-face');
+const badgeHand = document.getElementById('badge-hand');
+const badgeStreak = document.getElementById('badge-streak');
+const xpToastEl = document.getElementById('xp-toast');
+const xpTotalEl = document.getElementById('xp-total');
+const resultsStarsEl = document.getElementById('results-stars');
+const resultsXpEl = document.getElementById('results-xp');
+
+let currentLevel = null;
+let qIndex = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+let handLandmarker = null;
+let faceLandmarker = null;
+let modelsReady = false;
+let stream = null;
+let lastVideoTime = -1;
+let cursor = { x: null, y: null, visible: false };
+let headAnchor = { x: null, y: null };
+let hover = { el: null, since: 0 };
+let rafId = null;
+
+function getStars(){
+  try{ return JSON.parse(localStorage.getItem('sentenceMoversAR.stars') || '{}'); } catch(e){ return {}; }
+}
+function setStars(id, stars){
+  try{
+    const all = getStars();
+    all[id] = Math.max(all[id] || 0, stars);
+    localStorage.setItem('sentenceMoversAR.stars', JSON.stringify(all));
+  }catch(e){}
+}
+function starsForScore(correct, total){
+  const pct = total ? correct / total : 0;
+  if(pct >= 1) return 3;
+  if(pct >= 0.8) return 2;
+  if(pct >= 0.5) return 1;
+  return 0;
+}
+function renderStars(container, n){
+  container.innerHTML = '';
+  for(let i = 0; i < 3; i++){
+    const s = document.createElement('span');
+    s.textContent = i < n ? '★' : '☆';
+    s.style.color = i < n ? 'var(--brand-amber)' : 'var(--line)';
+    container.appendChild(s);
+  }
+}
+
+function getXP(){
+  try{ return parseInt(localStorage.getItem('sentenceMoversAR.xp') || '0', 10) || 0; } catch(e){ return 0; }
+}
+function addXP(amount){
+  const total = getXP() + amount;
+  try{ localStorage.setItem('sentenceMoversAR.xp', String(total)); }catch(e){}
+  updateXPDisplay();
+  return total;
+}
+function updateXPDisplay(){
+  xpTotalEl.textContent = getXP();
+}
+
+function showXPToast(amount, nearEl){
+  const r = localRectOf(nearEl);
+  xpToastEl.textContent = '+' + amount + ' XP';
+  xpToastEl.style.left = ((r.left + r.right) / 2) + 'px';
+  xpToastEl.style.top = r.top + 'px';
+  xpToastEl.classList.remove('pop');
+  void xpToastEl.offsetWidth; // restart the CSS animation
+  xpToastEl.classList.add('pop');
+}
+
+function updateStreakBadge(){
+  badgeStreak.textContent = '🔥 ' + streak;
+  badgeStreak.classList.toggle('active', streak >= 2);
+}
+
+function showScreen(name){
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+}
+
+function renderLevelList(){
+  updateXPDisplay();
+  const stars = getStars();
+  levelList.innerHTML = '';
+  LEVELS.forEach(level => {
+    const card = document.createElement('button');
+    card.className = 'level-card' + (level.accent === 'red' ? ' accent-red' : '');
+    const bestStars = stars[level.id] || 0;
+    const starsBadge = bestStars > 0 ? `<span class="badge-done">${'★'.repeat(bestStars)}${'☆'.repeat(3 - bestStars)}</span>` : '';
+    card.innerHTML = `<h3><span class="level-icon">${level.icon || '✨'}</span>${level.title}${starsBadge}</h3><p>${level.tagline}</p>`;
+    card.addEventListener('click', () => openGate(level.id));
+    levelList.appendChild(card);
+  });
+}
+
+function openGate(id){
+  currentLevel = LEVELS.find(l => l.id === id);
+  gateTitle.textContent = currentLevel.title;
+  gateStatus.textContent = '';
+  gateStatus.classList.remove('error');
+  showScreen('gate');
+}
+
+btnBackGate.addEventListener('click', () => { stopEverything(); showScreen('levels'); renderLevelList(); });
+
+async function ensureModels(){
+  if(modelsReady) return true;
+  gateLoading.classList.add('show');
+  try{
+    gateLoadingText.textContent = 'Loading pointing & face tracking…';
+    const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm');
+    async function createHand(delegate){
+      return HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate },
+        runningMode: 'VIDEO', numHands: 1
+      });
+    }
+    async function createFace(delegate){
+      return FaceLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate },
+        runningMode: 'VIDEO', numFaces: 1
+      });
+    }
+    try{ handLandmarker = await createHand('GPU'); }
+    catch(e){ handLandmarker = await createHand('CPU'); }
+    try{ faceLandmarker = await createFace('GPU'); }
+    catch(e){ faceLandmarker = await createFace('CPU'); }
+    modelsReady = true;
+    gateLoading.classList.remove('show');
+    return true;
+  }catch(err){
+    gateLoading.classList.remove('show');
+    gateStatus.classList.add('error');
+    gateStatus.textContent = 'Could not load the pointing/face tracker (needs an internet connection). You can still play with tap-to-select once the camera starts.';
+    return false;
+  }
+}
+
+btnStartCamera.addEventListener('click', async () => {
+  gateStatus.classList.remove('error');
+  gateStatus.textContent = 'Requesting camera…';
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width:{ideal:640}, height:{ideal:480} }, audio:false });
+  }catch(err){
+    gateStatus.classList.add('error');
+    gateStatus.textContent = 'Camera access was blocked or unavailable. Allow camera permission for this page and try again. (This needs to be loaded over HTTPS or localhost.)';
+    return;
+  }
+  video.srcObject = stream;
+  await new Promise(resolve => { video.onloadedmetadata = resolve; });
+  try{ await video.play(); }catch(e){}
+  await ensureModels();
+  startLevel();
+});
+
+function stopEverything(){
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+function startLevel(){
+  qIndex = 0; score = 0; streak = 0;
+  updateStreakBadge();
+  showScreen('ar');
+  showQuestion();
+  lastVideoTime = -1;
+  loop();
+}
+
+function showQuestion(){
+  answered = false;
+  feedbackEl.classList.remove('show');
+  const q = currentLevel.questions[qIndex];
+  qcountEl.textContent = `${currentLevel.title} · Question ${qIndex + 1} of ${currentLevel.questions.length}`;
+  qtextEl.textContent = q.prompt;
+  chipStack.innerHTML = '';
+  q.options.forEach(opt => {
+    const chip = document.createElement('button');
+    chip.className = 'ar-chip pointable';
+    chip.innerHTML = `<span class="label">${opt.text}</span><span class="ring"></span>`;
+    chip.addEventListener('click', () => selectOption(chip, opt));
+    chipStack.appendChild(chip);
+  });
+}
+
+function selectOption(el, opt){
+  if(answered) return;
+  answered = true;
+  const q = currentLevel.questions[qIndex];
+  document.querySelectorAll('.ar-chip').forEach(c => {
+    c.classList.remove('hovered');
+    const r = c.querySelector('.ring');
+    if(r) r.style.background = '';
+  });
+  chipStack.querySelectorAll('.ar-chip').forEach((c, i) => {
+    if(q.options[i].correct) c.classList.add('correct');
+    else if(c === el) c.classList.add('incorrect');
+    else c.classList.add('dimmed');
+  });
+  if(opt.correct){
+    score++;
+    streak++;
+    addXP(10);
+    showXPToast(10, el);
+  } else {
+    streak = 0;
+  }
+  updateStreakBadge();
+  feedbackTextEl.textContent = (opt.correct ? '✅ ' : '❌ ') + q.explain;
+  feedbackEl.classList.add('show');
+  btnContinue.classList.add('pointable');
+}
+
+btnContinue.addEventListener('click', () => {
+  if(!answered) return;
+  qIndex++;
+  if(qIndex >= currentLevel.questions.length){
+    finishLevel();
+  } else {
+    showQuestion();
+  }
+});
+
+function finishLevel(){
+  stopEverything();
+  qtextEl.textContent = '';
+  qcountEl.textContent = '';
+  chipStack.innerHTML = '';
+  feedbackEl.classList.remove('show');
+  const total = currentLevel.questions.length;
+  const allCorrect = score === total;
+  const earnedStars = starsForScore(score, total);
+  const prevBest = (getStars()[currentLevel.id] || 0);
+  setStars(currentLevel.id, earnedStars);
+
+  let bonus = 0;
+  if(allCorrect){ bonus = 20; addXP(bonus); }
+
+  resultsEyebrow.textContent = currentLevel.title;
+  document.getElementById('results-emoji').textContent = allCorrect ? '🏆' : (score >= total * 0.6 ? '🙂' : '💪');
+  resultsTitle.textContent = allCorrect ? 'Nailed it!' : 'Level complete';
+  renderStars(resultsStarsEl, earnedStars);
+  resultsScore.textContent = `You got ${score} out of ${total} correct.` + (earnedStars > prevBest ? ' New best!' : '');
+  resultsXpEl.textContent = `+${score * 10 + bonus} XP earned` + (bonus ? ' (includes +20 perfect-run bonus)' : '') + ` · ${getXP()} XP total`;
+  launchConfetti(allCorrect);
+  showScreen('results');
+}
+
+function launchConfetti(big){
+  const layer = document.getElementById('confetti-layer');
+  layer.innerHTML = '';
+  const colors = ['#0047B6', '#D81F2A', '#FFB300'];
+  const count = big ? 34 : 16;
+  for(let i = 0; i < count; i++){
+    const s = document.createElement('span');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random() * 0.4) + 's';
+    s.style.transform = `rotate(${Math.random() * 360}deg)`;
+    layer.appendChild(s);
+  }
+}
+
+btnRetry.addEventListener('click', () => openGate(currentLevel.id));
+btnResultsBack.addEventListener('click', () => { showScreen('levels'); renderLevelList(); });
+
+function mapPoint(nx, ny){
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const cw = camWrap.clientWidth, ch = camWrap.clientHeight;
+  if(!vw || !vh) return { x: nx * cw, y: ny * ch };
+  const videoAspect = vw / vh, containerAspect = cw / ch;
+  let renderW, renderH, offX = 0, offY = 0;
+  if(videoAspect > containerAspect){
+    renderH = ch; renderW = vw * (ch / vh); offX = (renderW - cw) / 2;
+  } else {
+    renderW = cw; renderH = vh * (cw / vw); offY = (renderH - ch) / 2;
+  }
+  return { x: nx * renderW - offX, y: ny * renderH - offY };
+}
+
+function localRectOf(el){
+  const r = el.getBoundingClientRect();
+  const c = camWrap.getBoundingClientRect();
+  return { left: r.left - c.left, top: r.top - c.top, right: r.right - c.left, bottom: r.bottom - c.top };
+}
+
+function updateChipPosition(){
+  let x, y;
+  if(headAnchor.x !== null){ x = headAnchor.x; y = headAnchor.y - 40; }
+  else { x = camWrap.clientWidth / 2; y = camWrap.clientHeight * 0.42; }
+  const bannerGap = 28; // visual air between the question and the first answer chip
+  const minTop = questionBanner.offsetHeight + bannerGap + chipStack.offsetHeight;
+  y = Math.max(y, minTop);
+  const halfW = chipStack.offsetWidth / 2 || 10;
+  x = Math.min(Math.max(x, halfW + 8), camWrap.clientWidth - halfW - 8);
+  chipStack.style.left = x + 'px';
+  chipStack.style.top = y + 'px';
+}
+
+function updateHover(){
+  if(answered){
+    if(btnContinue.classList.contains('pointable')) hitTest([btnContinue]);
+    return;
+  }
+  hitTest(Array.from(document.querySelectorAll('.ar-chip.pointable')));
+}
+
+function hitTest(elements){
+  if(!cursor.visible){ clearHover(); return; }
+  let target = null;
+  for(const el of elements){
+    const r = localRectOf(el);
+    if(cursor.x >= r.left && cursor.x <= r.right && cursor.y >= r.top && cursor.y <= r.bottom){ target = el; break; }
+  }
+  if(target !== hover.el){
+    clearHover();
+    if(target){ hover.el = target; hover.since = performance.now(); target.classList.add('hovered'); }
+  }
+  if(hover.el){
+    const progress = Math.min(1, (performance.now() - hover.since) / DWELL_MS);
+    const ring = hover.el.querySelector('.ring');
+    if(ring) ring.style.background = `conic-gradient(#fff ${progress * 360}deg, transparent 0)`;
+    else hover.el.style.boxShadow = `0 0 0 4px rgba(255,255,255,${progress})`;
+    if(progress >= 1){
+      const elToClick = hover.el;
+      clearHover();
+      elToClick.click();
+    }
+  }
+}
+
+function clearHover(){
+  if(hover.el){
+    hover.el.classList.remove('hovered');
+    const ring = hover.el.querySelector('.ring');
+    if(ring) ring.style.background = '';
+    hover.el.style.boxShadow = '';
+  }
+  hover.el = null; hover.since = 0;
+}
+
+function loop(){
+  rafId = requestAnimationFrame(loop);
+  if(!video.videoWidth) return;
+  if(video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+  const now = performance.now();
+
+  if(faceLandmarker){
+    try{
+      const res = faceLandmarker.detectForVideo(video, now);
+      if(res.faceLandmarks && res.faceLandmarks.length){
+        badgeFace.classList.add('live');
+        const lm = res.faceLandmarks[0];
+        let minX=1, maxX=0, minY=1;
+        for(const p of lm){ if(p.x<minX) minX=p.x; if(p.x>maxX) maxX=p.x; if(p.y<minY) minY=p.y; }
+        const cx = 1 - (minX + maxX) / 2; // mirrored
+        const cyTop = minY;
+        const pt = mapPoint(cx, cyTop);
+        headAnchor.x = pt.x; headAnchor.y = pt.y;
+      } else {
+        badgeFace.classList.remove('live');
+      }
+    }catch(e){}
+  }
+
+  if(handLandmarker){
+    try{
+      const res = handLandmarker.detectForVideo(video, now);
+      if(res.landmarks && res.landmarks.length){
+        badgeHand.classList.add('live');
+        const tip = res.landmarks[0][8];
+        const pt = mapPoint(1 - tip.x, tip.y);
+        cursor.x = pt.x; cursor.y = pt.y; cursor.visible = true;
+        cursorDot.style.display = 'block';
+        cursorDot.style.left = pt.x + 'px';
+        cursorDot.style.top = pt.y + 'px';
+      } else {
+        badgeHand.classList.remove('live');
+        cursor.visible = false;
+        cursorDot.style.display = 'none';
+      }
+    }catch(e){}
+  }
+
+  updateChipPosition();
+  updateHover();
+}
+
+renderLevelList();
+</script>
+</body>
+</html>
