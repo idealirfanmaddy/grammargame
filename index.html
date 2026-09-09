@@ -79,79 +79,61 @@
   /* Question + answers move together as one unit, anchored just above the head */
   #floating-panel{
     position:absolute; display:flex; flex-direction:column; z-index:4;
-    width:min(86vw, 340px); transform:translate(-50%,-100%);
+    width:min(74vw, 280px); transform:translate(-50%,-100%);
     transition:left .18s ease, top .18s ease;
   }
   #question-banner{
     background:linear-gradient(180deg, rgba(6,14,32,.94), rgba(6,14,32,.82));
     -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.14); border-radius:18px;
-    padding:14px 16px 16px; margin-bottom:14px; z-index:5;
+    border:1px solid rgba(255,255,255,.14); border-radius:14px;
+    padding:9px 12px 10px; margin-bottom:9px; z-index:5;
     color:#fff; font-family:var(--font-body); text-align:center;
-    box-shadow:0 10px 24px rgba(0,0,0,.4);
+    box-shadow:0 8px 18px rgba(0,0,0,.4);
   }
-  #qtext{ display:block; font-family:var(--font-display); font-weight:700; font-size:21px; line-height:1.3; }
-  #grab-hint{
-    margin-top:12px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em;
-    color:rgba(255,255,255,.55); text-align:center; padding:6px 10px; border-radius:10px;
-    border:1.5px dashed rgba(255,255,255,.28); transition:color .15s ease, border-color .15s ease, background .15s ease;
-  }
-  #grab-hint.dragging{ color:#fff; border-color:rgba(255,179,0,.7); border-style:solid; background:rgba(255,179,0,.14); }
-  #grab-hint.armed{ color:#3A2900; border-color:var(--brand-amber); border-style:solid; background:var(--brand-amber); font-weight:700; }
+  #qtext{ display:block; font-family:var(--font-display); font-weight:700; font-size:15.5px; line-height:1.25; }
 
   /* Question-count sits below the streak / face / hand tracking badges, fixed at the top of the screen */
   #qcount-bar{
     position:absolute; top:34px; left:0; right:0; z-index:5; text-align:center; padding:0 16px;
   }
   #qcount-bar .qcount{
-    font-family:var(--font-mono); font-weight:700; font-size:10px; letter-spacing:.09em; text-transform:uppercase;
-    display:inline-block; padding:4px 11px; border-radius:99px;
+    font-family:var(--font-mono); font-weight:700; font-size:9px; letter-spacing:.08em; text-transform:uppercase;
+    display:inline-block; padding:3px 9px; border-radius:99px;
     background:var(--brand-amber); color:#3A2900; box-shadow:0 4px 10px rgba(0,0,0,.35);
     max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
 
   #chip-stack{
-    display:flex; flex-direction:column; gap:12px; align-items:stretch; z-index:4;
+    display:flex; flex-direction:column; gap:7px; align-items:stretch; z-index:4;
   }
   .ar-chip{
-    position:relative; font-family:var(--font-display); font-weight:700; font-size:16px; color:#fff;
-    background:linear-gradient(180deg, #3B7DDE, var(--brand-blue)); border:2px solid rgba(255,255,255,.6); border-radius:16px;
-    padding:14px 16px; width:100%;
-    text-align:center; line-height:1.28; cursor:pointer; word-break:break-word;
-    box-shadow:0 6px 16px rgba(0,20,60,.4); overflow:hidden;
+    position:relative; font-family:var(--font-display); font-weight:700; font-size:13px; color:#fff;
+    background:linear-gradient(180deg, #3B7DDE, var(--brand-blue)); border:1.5px solid rgba(255,255,255,.6); border-radius:12px;
+    padding:9px 12px; width:100%;
+    text-align:center; line-height:1.25; cursor:pointer; word-break:break-word;
+    box-shadow:0 4px 12px rgba(0,20,60,.4); overflow:hidden;
     display:flex; align-items:center; justify-content:center;
   }
-  .ar-chip .ring{ position:absolute; inset:-2px; border-radius:16px; pointer-events:none; opacity:0; }
+  .ar-chip .ring{ position:absolute; inset:-2px; border-radius:12px; pointer-events:none; opacity:0; }
   .ar-chip.hovered .ring{ opacity:1; }
   .ar-chip.correct{ background:linear-gradient(180deg, #35C57F, var(--success)); }
   .ar-chip.incorrect{ background:linear-gradient(180deg, #E6555F, var(--brand-red)); }
   .ar-chip.dimmed{ opacity:.4; }
-  .ar-chip.grabbed{ opacity:.35; outline:2px dashed rgba(255,255,255,.7); outline-offset:2px; }
 
   #cursor-dot{
-    position:absolute; width:26px; height:26px; border-radius:50%; background:rgba(255,179,0,.92);
-    border:3px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.3); transform:translate(-50%,-50%);
-    z-index:6; pointer-events:none; display:none; transition:transform .1s ease, background .1s ease;
+    position:absolute; width:20px; height:20px; border-radius:50%; background:rgba(255,179,0,.92);
+    border:2.5px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.3); transform:translate(-50%,-50%);
+    z-index:6; pointer-events:none; display:none;
   }
-  #cursor-dot.pinching{ background:var(--brand-amber); transform:translate(-50%,-50%) scale(.72); }
-
-  #chip-ghost{
-    position:absolute; z-index:10; pointer-events:none; transform:translate(-50%,-50%) scale(1.06);
-    font-family:var(--font-display); font-weight:700; font-size:16px; color:#fff;
-    background:linear-gradient(180deg, #3B7DDE, var(--brand-blue)); border:2px solid rgba(255,255,255,.85); border-radius:16px;
-    padding:14px 18px; text-align:center; line-height:1.28; box-shadow:0 12px 28px rgba(0,20,60,.55);
-    display:none; max-width:78vw;
-  }
-  #chip-ghost.show{ display:block; }
 
   #ar-feedback{
-    position:absolute; left:0; right:0; bottom:0; z-index:7; padding:16px;
+    position:absolute; left:0; right:0; bottom:0; z-index:7; padding:10px;
     background:linear-gradient(to top, rgba(6,14,32,.9), rgba(6,14,32,0));
     color:#fff; display:none;
   }
   #ar-feedback.show{ display:block; }
-  #ar-feedback p{ margin:0 0 12px; font-size:14.5px; font-weight:600; text-align:center; }
-  #ar-feedback .ar-chip{ margin:0 auto; display:block; width:fit-content; background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900; font-weight:800; padding:12px 26px; }
+  #ar-feedback p{ margin:0 0 8px; font-size:12.5px; font-weight:600; text-align:center; }
+  #ar-feedback .ar-chip{ margin:0 auto; display:block; width:fit-content; background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900; font-weight:800; padding:9px 20px; }
 
   #track-status{
     position:absolute; top:8px; right:10px; z-index:8; display:flex; gap:6px;
@@ -200,7 +182,7 @@
     <div class="xp-badge">⭐ <span id="xp-total">0</span> XP</div>
     <p class="eyebrow">Sentence Movers · AR</p>
     <h1>Point to answer.</h1>
-    <p class="lede">Your answer choices float above your head in the camera. Pinch one between your thumb and finger to grab it, then let go over the target to lock it in — or just hold your finger on it, or tap.</p>
+    <p class="lede">Your answer choices float above your head in the camera. Point at one with your finger and hold for a second to pick it — or just tap it instead.</p>
     <div id="level-list"></div>
   </section>
 
@@ -211,9 +193,9 @@
       <strong>How to play</strong>
       <ul>
         <li>Prop your phone up so your head and one hand fit in frame.</li>
-        <li>Read the question, then pinch an answer chip between your thumb and index finger to grab it.</li>
-        <li>Drag it up and let go over "Drop here to confirm" to lock it in.</li>
-        <li>Can't pinch cleanly? Just hold your finger over an answer for about a second, or tap it instead.</li>
+        <li>Read the question, then point at your answer.</li>
+        <li>Hold your finger on it for about a second to lock it in.</li>
+        <li>Can't get pointing to work? You can always just tap an answer instead.</li>
       </ul>
     </div>
     <button class="btn" id="btn-start-camera">▶ Turn on camera &amp; start</button>
@@ -247,11 +229,9 @@
     <div id="floating-panel">
       <div id="question-banner">
         <span id="qtext"></span>
-        <div id="grab-hint">🤏 pinch a chip to grab it</div>
       </div>
       <div id="chip-stack"></div>
     </div>
-    <div id="chip-ghost"></div>
     <div id="cursor-dot"></div>
     <div id="xp-toast"></div>
     <div id="ar-feedback">
@@ -501,8 +481,6 @@ const floatingPanel = document.getElementById('floating-panel');
 const chipStack = document.getElementById('chip-stack');
 const questionBanner = document.getElementById('question-banner');
 const cursorDot = document.getElementById('cursor-dot');
-const chipGhost = document.getElementById('chip-ghost');
-const grabHintEl = document.getElementById('grab-hint');
 const qcountEl = document.getElementById('qcount');
 const qtextEl = document.getElementById('qtext');
 const feedbackEl = document.getElementById('ar-feedback');
@@ -530,13 +508,6 @@ let cursor = { x: null, y: null, visible: false };
 let headAnchor = { x: null, y: null };
 let hover = { el: null, since: 0 };
 let rafId = null;
-
-// Pinch-to-grab state
-const PINCH_ON = 0.055;  // normalized thumb-to-index distance that starts a pinch
-const PINCH_OFF = 0.09;  // must open past this to register as released (avoids jitter)
-let pinching = false;
-let grabbedEl = null;
-let grabbedOpt = null;
 
 function getStars(){
   try{ return JSON.parse(localStorage.getItem('sentenceMoversAR.stars') || '{}'); } catch(e){ return {}; }
@@ -677,7 +648,6 @@ function stopEverything(){
   if(rafId) cancelAnimationFrame(rafId);
   rafId = null;
   if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  endGrab();
 }
 
 function startLevel(){
@@ -691,17 +661,14 @@ function startLevel(){
 
 function showQuestion(){
   answered = false;
-  endGrab();
   feedbackEl.classList.remove('show');
   const q = currentLevel.questions[qIndex];
   qcountEl.textContent = `${currentLevel.title} · Question ${qIndex + 1} of ${currentLevel.questions.length}`;
   qtextEl.textContent = q.prompt;
-  grabHintEl.style.display = handLandmarker ? '' : 'none';
   chipStack.innerHTML = '';
-  q.options.forEach((opt, i) => {
+  q.options.forEach(opt => {
     const chip = document.createElement('button');
     chip.className = 'ar-chip pointable';
-    chip.dataset.optIndex = i;
     chip.innerHTML = `<span class="label">${opt.text}</span><span class="ring"></span>`;
     chip.addEventListener('click', () => selectOption(chip, opt));
     chipStack.appendChild(chip);
@@ -812,11 +779,11 @@ function localRectOf(el){
 function updateChipPosition(){
   // The question and its answer chips move together as one unit, anchored just above the head.
   let x, y;
-  if(headAnchor.x !== null){ x = headAnchor.x; y = headAnchor.y - 30; }
+  if(headAnchor.x !== null){ x = headAnchor.x; y = headAnchor.y - 20; }
   else { x = camWrap.clientWidth / 2; y = camWrap.clientHeight * 0.5; }
   const panelH = floatingPanel.offsetHeight;
   const panelW = floatingPanel.offsetWidth || 10;
-  y = Math.max(y, panelH + 62); // keep the panel's top edge clear of the tracking badges + question-count bar
+  y = Math.max(y, panelH + 52); // keep the panel's top edge clear of the tracking badges + question-count bar
   y = Math.min(y, camWrap.clientHeight - 14); // keep the panel from being pushed off the bottom
   const halfW = panelW / 2;
   x = Math.min(Math.max(x, halfW + 8), camWrap.clientWidth - halfW - 8);
@@ -824,72 +791,12 @@ function updateChipPosition(){
   floatingPanel.style.top = y + 'px';
 }
 
-function handleHandInteraction(){
+function updateHover(){
   if(answered){
     if(btnContinue.classList.contains('pointable')) hitTest([btnContinue]);
     return;
   }
-
-  if(grabbedEl){
-    // Actively dragging a grabbed chip: follow the fingers and watch for a drop.
-    updateGhostPosition();
-    const overlap = cursor.visible && rectInside(localRectOf(grabHintEl), cursor.x, cursor.y);
-    grabHintEl.classList.toggle('armed', overlap);
-    if(!pinching){
-      if(overlap) confirmGrab();
-      else cancelGrab();
-    }
-    return;
-  }
-
-  // Not grabbing yet: normal hover (dwell fallback), and pinch-to-grab if the fingers close over a chip.
   hitTest(Array.from(document.querySelectorAll('.ar-chip.pointable')));
-  if(pinching && hover.el){
-    startGrab(hover.el);
-  }
-}
-
-function rectInside(rect, x, y){
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-}
-
-function startGrab(el){
-  clearHover();
-  grabbedEl = el;
-  const q = currentLevel.questions[qIndex];
-  grabbedOpt = q.options[parseInt(el.dataset.optIndex, 10)];
-  el.classList.add('grabbed');
-  const label = el.querySelector('.label');
-  chipGhost.textContent = label ? label.textContent : el.textContent;
-  chipGhost.classList.add('show');
-  grabHintEl.classList.add('dragging');
-  grabHintEl.textContent = 'Drop here to confirm ✓';
-  updateGhostPosition();
-}
-
-function confirmGrab(){
-  const el = grabbedEl, opt = grabbedOpt;
-  endGrab();
-  if(el && opt) selectOption(el, opt);
-}
-
-function cancelGrab(){
-  endGrab();
-}
-
-function endGrab(){
-  if(grabbedEl) grabbedEl.classList.remove('grabbed');
-  grabbedEl = null;
-  grabbedOpt = null;
-  chipGhost.classList.remove('show');
-  grabHintEl.classList.remove('dragging', 'armed');
-  grabHintEl.textContent = '🤏 pinch a chip to grab it';
-}
-
-function updateGhostPosition(){
-  if(!cursor.visible) return;
-  chipGhost.style.left = cursor.x + 'px';
-  chipGhost.style.top = cursor.y + 'px';
 }
 
 function hitTest(elements){
@@ -957,30 +864,21 @@ function loop(){
       if(res.landmarks && res.landmarks.length){
         badgeHand.classList.add('live');
         const tip = res.landmarks[0][8];
-        const thumb = res.landmarks[0][4];
         const pt = mapPoint(1 - tip.x, tip.y);
         cursor.x = pt.x; cursor.y = pt.y; cursor.visible = true;
         cursorDot.style.display = 'block';
         cursorDot.style.left = pt.x + 'px';
         cursorDot.style.top = pt.y + 'px';
-
-        const pinchDist = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
-        if(pinching){ if(pinchDist > PINCH_OFF) pinching = false; }
-        else { if(pinchDist < PINCH_ON) pinching = true; }
-        cursorDot.classList.toggle('pinching', pinching);
       } else {
         badgeHand.classList.remove('live');
         cursor.visible = false;
         cursorDot.style.display = 'none';
-        pinching = false;
-        cursorDot.classList.remove('pinching');
-        if(grabbedEl) cancelGrab();
       }
     }catch(e){}
   }
 
   updateChipPosition();
-  handleHandInteraction();
+  updateHover();
 }
 
 renderLevelList();
