@@ -103,9 +103,6 @@
     max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
 
-  #chip-stack{
-    display:flex; flex-direction:column; gap:7px; align-items:stretch; z-index:4;
-  }
   .ar-chip{
     position:relative; font-family:var(--font-display); font-weight:700; font-size:13px; color:#fff;
     background:linear-gradient(180deg, #3B7DDE, var(--brand-blue)); border:1.5px solid rgba(255,255,255,.6); border-radius:12px;
@@ -119,6 +116,58 @@
   .ar-chip.correct{ background:linear-gradient(180deg, #35C57F, var(--success)); }
   .ar-chip.incorrect{ background:linear-gradient(180deg, #E6555F, var(--brand-red)); }
   .ar-chip.dimmed{ opacity:.4; }
+
+  /* Sentence building: the blanks live in the head-anchored floating panel;
+     the draggable word bank sits in a fixed tray near the bottom of the screen. */
+  #blank-row{
+    display:flex; flex-wrap:wrap; gap:7px; justify-content:center; z-index:4;
+  }
+  .blank-slot{
+    position:relative; font-family:var(--font-display); font-weight:700; font-size:13px; color:#fff;
+    border:1.5px dashed rgba(255,255,255,.55); border-radius:12px;
+    padding:9px 12px; min-width:60px; min-height:18px;
+    text-align:center; line-height:1.25; word-break:break-word;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.06);
+    transition:background .2s ease, border-color .2s ease;
+  }
+  .blank-slot .placeholder-label{
+    font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.45);
+  }
+  .blank-slot.filled{
+    border-style:solid; border-color:rgba(255,255,255,.6);
+    background:linear-gradient(180deg, #3B7DDE, var(--brand-blue));
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,20,60,.4);
+  }
+  .blank-slot.filled.correct{ background:linear-gradient(180deg, #35C57F, var(--success)); }
+  .blank-slot.filled.incorrect{ background:linear-gradient(180deg, #E6555F, var(--brand-red)); }
+
+  #word-bank{
+    position:absolute; left:0; right:0; bottom:14px; z-index:4;
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:0 16px;
+  }
+  #word-bank.hide{ display:none; }
+  .bank-chip{
+    font-family:var(--font-display); font-weight:700; font-size:12.5px; color:#fff;
+    background:linear-gradient(180deg, rgba(11,20,42,.92), rgba(11,20,42,.78));
+    -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+    border:1.5px solid rgba(255,255,255,.5); border-radius:12px;
+    padding:8px 12px; text-align:center; line-height:1.2; word-break:break-word;
+    box-shadow:0 4px 10px rgba(0,0,0,.35); cursor:pointer;
+  }
+
+  #drag-ghost{
+    position:absolute; z-index:10; pointer-events:none; display:none;
+    align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:800; font-size:12.5px;
+    background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900;
+    border:1.5px solid rgba(255,255,255,.7); border-radius:12px;
+    padding:9px 14px; text-align:center; line-height:1.2;
+    box-shadow:0 6px 18px rgba(0,0,0,.5);
+    transform:translate(-50%,-50%) scale(1.06);
+    white-space:nowrap; max-width:70vw; overflow:hidden; text-overflow:ellipsis;
+  }
 
   #cursor-dot{
     position:absolute; width:20px; height:20px; border-radius:50%; background:rgba(255,179,0,.92);
@@ -134,6 +183,37 @@
   #ar-feedback.show{ display:block; }
   #ar-feedback p{ margin:0 0 8px; font-size:12.5px; font-weight:600; text-align:center; }
   #ar-feedback .ar-chip{ margin:0 auto; display:block; width:fit-content; background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900; font-weight:800; padding:9px 20px; }
+
+  /* Sentence Mover: shows the active→passive rearrangement, only on the Passive Voice level */
+  #sentence-mover{ display:none; margin:0 0 10px; }
+  #sentence-mover.show{ display:block; }
+  .sm-caption{
+    font-family:var(--font-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+    color:rgba(255,255,255,.6); text-align:center; margin-bottom:6px; transition:color .3s ease;
+  }
+  .sm-stage{
+    display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); border-radius:12px;
+    padding:9px 10px; min-height:20px;
+  }
+  .sm-tok{ font-family:var(--font-body); font-weight:700; font-size:12.5px; color:#fff; white-space:nowrap; }
+  .sm-tok.sm-subject, .sm-tok.sm-object{
+    padding:4px 9px; border-radius:8px; background:rgba(255,255,255,.09); transition:opacity .45s ease, background .3s ease;
+  }
+  .sm-tok.sm-object.sm-role-subject{ background:rgba(255,179,0,.18); box-shadow:inset 0 0 0 1px rgba(255,179,0,.5); }
+  .sm-tok.sm-subject.sm-drop{ opacity:0; }
+  .sm-verb{ display:inline-flex; align-items:center; }
+  .sm-verb-active{ color:#6EA8FF; font-weight:800; transition:opacity .35s ease; }
+  .sm-verb-passive{ align-items:center; opacity:0; transition:opacity .35s ease; }
+  .sm-verb-passive .aux{ color:rgba(255,255,255,.85); font-weight:700; margin-right:5px; }
+  .sm-verb-passive .part{ color:var(--brand-amber); font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+  .sm-legend{
+    display:flex; justify-content:center; gap:14px; margin-top:7px;
+    font-family:var(--font-mono); font-size:9px; color:rgba(255,255,255,.65);
+  }
+  .sm-legend .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
+  .sm-legend .dot.blue{ background:#6EA8FF; }
+  .sm-legend .dot.amber{ background:var(--brand-amber); }
 
   #track-status{
     position:absolute; top:8px; right:10px; z-index:8; display:flex; gap:6px;
@@ -181,8 +261,8 @@
     <div class="brand-dots"><span></span><span></span><span></span></div>
     <div class="xp-badge">⭐ <span id="xp-total">0</span> XP</div>
     <p class="eyebrow">Sentence Movers · AR</p>
-    <h1>Point to answer.</h1>
-    <p class="lede">Your answer choices float above your head in the camera. Point at one with your finger and hold for a second to pick it — or just tap it instead.</p>
+    <h1>Drag to answer.</h1>
+    <p class="lede">Your answer pieces sit in a tray at the bottom of the camera. Touch one with your fingertip to pick it up, carry it with your hand, and drop it into the blank above your head — or just tap a piece instead.</p>
     <div id="level-list"></div>
   </section>
 
@@ -193,9 +273,9 @@
       <strong>How to play</strong>
       <ul>
         <li>Prop your phone up so your head and one hand fit in frame.</li>
-        <li>Read the question, then point at your answer.</li>
-        <li>Hold your finger on it for about a second to lock it in.</li>
-        <li>Can't get pointing to work? You can always just tap an answer instead.</li>
+        <li>Read the question, then touch a word or phrase in the tray at the bottom to pick it up.</li>
+        <li>Move your hand to carry it, then bring it over the blank above your head to drop it in.</li>
+        <li>Can't get dragging to work? You can always just tap a piece to place it instead.</li>
       </ul>
     </div>
     <button class="btn" id="btn-start-camera">▶ Turn on camera &amp; start</button>
@@ -230,11 +310,25 @@
       <div id="question-banner">
         <span id="qtext"></span>
       </div>
-      <div id="chip-stack"></div>
+      <div id="blank-row"></div>
     </div>
+    <div id="word-bank"></div>
+    <div id="drag-ghost"></div>
     <div id="cursor-dot"></div>
     <div id="xp-toast"></div>
     <div id="ar-feedback">
+      <div id="sentence-mover">
+        <div class="sm-caption" id="sm-label">ACTIVE VOICE</div>
+        <div class="sm-stage" id="sm-stage">
+          <span class="sm-tok sm-subject" id="sm-subject"></span>
+          <span class="sm-tok sm-verb" id="sm-verb">
+            <span class="sm-verb-active" id="sm-verb-active"></span>
+            <span class="sm-verb-passive" id="sm-verb-passive"><span class="aux" id="sm-verb-aux"></span><span class="part" id="sm-verb-part"></span></span>
+          </span>
+          <span class="sm-tok sm-object" id="sm-object"></span>
+        </div>
+        <div class="sm-legend"><span><span class="dot blue"></span>active verb</span><span><span class="dot amber"></span>passive participle</span></div>
+      </div>
       <p id="feedback-text"></p>
       <button class="ar-chip" id="btn-continue">Continue →</button>
     </div>
@@ -250,7 +344,7 @@ const LEVELS = [
     title: 'Question Formation',
     icon: '❓',
     accent: 'blue',
-    tagline: 'Point to move the auxiliary and build a question.',
+    tagline: 'Drag the auxiliary into place to build a question.',
     questions: [
       {
         prompt: 'Start: "She is happy." Which word has to move to ask a question?',
@@ -319,67 +413,93 @@ const LEVELS = [
     title: 'Passive Voice',
     icon: '🔄',
     accent: 'red',
-    tagline: 'Point to swap the spotlight from doer to receiver.',
+    tagline: 'Drag the pieces to swap the spotlight from doer to receiver.',
     questions: [
       {
         prompt: 'Start: "The cat chased the mouse." In the passive voice, which part becomes the new subject?',
         options: [ { text:'The cat', correct:false }, { text:'chased', correct:false }, { text:'the mouse', correct:true } ],
-        explain: 'The object of the action moves to the front to become the subject.'
+        explain: 'The object of the action moves to the front to become the subject.',
+        move: { subject:'The cat', verb:'chased', object:'the mouse', aux:'was', participle:'chased', byAgent:'the cat' }
       },
       {
         prompt: 'Start: "The cat chased the mouse." In the passive version, what happens to the verb "chased"?',
         options: [ { text:'Stays "chased"', correct:false }, { text:'Becomes "was chased"', correct:true }, { text:'Becomes "chases"', correct:false } ],
-        explain: 'The verb changes form to passive: was/were + past participle.'
+        explain: 'The verb changes form to passive: was/were + past participle.',
+        move: { subject:'The cat', verb:'chased', object:'the mouse', aux:'was', participle:'chased', byAgent:'the cat' }
       },
       {
         prompt: 'Start: "The cat chased the mouse." Which is the correctly formed passive sentence?',
         options: [ { text:'The mouse was chased by the cat.', correct:true }, { text:'The cat was chased by the mouse.', correct:false }, { text:'The mouse chased by the cat.', correct:false } ],
-        explain: 'New subject, passive verb, then "by" + the original subject.'
+        explain: 'New subject, passive verb, then "by" + the original subject.',
+        move: { subject:'The cat', verb:'chased', object:'the mouse', aux:'was', participle:'chased', byAgent:'the cat' },
+        blanks: [ { role:'subject', text:'The mouse' }, { role:'aux', text:'was' }, { role:'participle', text:'chased' }, { role:'agent', text:'by the cat' } ],
+        bank: [ 'The mouse', 'was', 'chased', 'by the cat', 'The cat', 'were' ]
       },
       {
         prompt: 'Start: "The chefs prepared the meal." Which is the correctly formed passive sentence?',
         options: [ { text:'The meal was prepared by the chefs.', correct:true }, { text:'The meal were prepared by the chefs.', correct:false }, { text:'The meal prepared by the chefs.', correct:false } ],
-        explain: 'The verb agrees with the NEW subject "the meal" (singular) — not the old one.'
+        explain: 'The verb agrees with the NEW subject "the meal" (singular) — not the old one.',
+        move: { subject:'The chefs', verb:'prepared', object:'the meal', aux:'was', participle:'prepared', byAgent:'the chefs' },
+        blanks: [ { role:'subject', text:'The meal' }, { role:'aux', text:'was' }, { role:'participle', text:'prepared' }, { role:'agent', text:'by the chefs' } ],
+        bank: [ 'The meal', 'was', 'prepared', 'by the chefs', 'were', 'prepares' ]
       },
       {
         prompt: 'Start: "The artist painted the mural." Which part becomes the new subject?',
         options: [ { text:'The artist', correct:false }, { text:'painted', correct:false }, { text:'the mural', correct:true } ],
-        explain: 'Same move: the receiver of the action moves to the front.'
+        explain: 'Same move: the receiver of the action moves to the front.',
+        move: { subject:'The artist', verb:'painted', object:'the mural', aux:'was', participle:'painted', byAgent:'the artist' }
       },
       {
         prompt: 'Which is the correctly formed passive sentence for "The artist painted the mural."?',
         options: [ { text:'The mural was painted by the artist.', correct:true }, { text:'The artist was painted by the mural.', correct:false }, { text:'The mural painted by the artist.', correct:false } ],
-        explain: 'New subject, "was" + past participle, then "by" + the original subject.'
+        explain: 'New subject, "was" + past participle, then "by" + the original subject.',
+        move: { subject:'The artist', verb:'painted', object:'the mural', aux:'was', participle:'painted', byAgent:'the artist' },
+        blanks: [ { role:'subject', text:'The mural' }, { role:'aux', text:'was' }, { role:'participle', text:'painted' }, { role:'agent', text:'by the artist' } ],
+        bank: [ 'The mural', 'was', 'painted', 'by the artist', 'The artist', 'is' ]
       },
       {
         prompt: 'Start: "The manager reviews the reports." (present tense) What does "reviews" become in the passive?',
         options: [ { text:'was reviewed', correct:false }, { text:'is reviewed', correct:true }, { text:'reviewing', correct:false } ],
-        explain: 'Present tense passive uses is/are + past participle, not was/were.'
+        explain: 'Present tense passive uses is/are + past participle, not was/were.',
+        move: { subject:'The manager', verb:'reviews', object:'the reports', aux:'are', participle:'reviewed', byAgent:'the manager' }
       },
       {
         prompt: 'Which is the correctly formed passive sentence for "The manager reviews the reports."?',
         options: [ { text:'The reports are reviewed by the manager.', correct:true }, { text:'The reports is reviewed by the manager.', correct:false }, { text:'The reports was reviewed by the manager.', correct:false } ],
-        explain: '"Reports" is plural, so it needs "are", not "is" or "was".'
+        explain: '"Reports" is plural, so it needs "are", not "is" or "was".',
+        move: { subject:'The manager', verb:'reviews', object:'the reports', aux:'are', participle:'reviewed', byAgent:'the manager' },
+        blanks: [ { role:'subject', text:'The reports' }, { role:'aux', text:'are' }, { role:'participle', text:'reviewed' }, { role:'agent', text:'by the manager' } ],
+        bank: [ 'The reports', 'are', 'reviewed', 'by the manager', 'is', 'was' ]
       },
       {
         prompt: '"The window was broken." Why might "by ___" be left out here?',
         options: [ { text:'The doer is unknown or unimportant', correct:true }, { text:"It's grammatically required to leave it out", correct:false }, { text:'Passive sentences never mention the doer', correct:false } ],
-        explain: 'The "by" phrase is optional — drop it when who did it doesn\'t matter.'
+        explain: 'The "by" phrase is optional — drop it when who did it doesn\'t matter.',
+        move: { subject:'Someone', verb:'broke', object:'the window', aux:'was', participle:'broken', byAgent:null }
       },
       {
         prompt: 'Start: "Volunteers clean the beach every month." Which is the correctly formed passive sentence?',
         options: [ { text:'The beach is cleaned by volunteers every month.', correct:true }, { text:'The beach was cleaned by volunteers every month.', correct:false }, { text:'The beach cleaned by volunteers every month.', correct:false } ],
-        explain: 'Present tense, singular new subject "the beach" → "is cleaned".'
+        explain: 'Present tense, singular new subject "the beach" → "is cleaned".',
+        move: { subject:'Volunteers', verb:'clean', object:'the beach', aux:'is', participle:'cleaned', byAgent:'volunteers' },
+        blanks: [ { role:'subject', text:'The beach' }, { role:'aux', text:'is' }, { role:'participle', text:'cleaned' }, { role:'agent', text:'by volunteers' } ],
+        bank: [ 'The beach', 'is', 'cleaned', 'by volunteers', 'was', 'are' ]
       },
       {
         prompt: 'Start: "The company will launch the product next week." Which is the correctly formed passive sentence?',
         options: [ { text:'The product will be launched by the company next week.', correct:true }, { text:'The product will launched by the company next week.', correct:false }, { text:'The product will be launch by the company next week.', correct:false } ],
-        explain: 'Future passive keeps "will", adds "be", then the past participle "launched".'
+        explain: 'Future passive keeps "will", adds "be", then the past participle "launched".',
+        move: { subject:'The company', verb:'will launch', object:'the product', aux:'will be', participle:'launched', byAgent:'the company' },
+        blanks: [ { role:'subject', text:'The product' }, { role:'aux', text:'will be' }, { role:'participle', text:'launched' }, { role:'agent', text:'by the company' } ],
+        bank: [ 'The product', 'will be', 'launched', 'by the company', 'will', 'launch' ]
       },
       {
         prompt: 'Start: "Someone has stolen my bike." Which is the correctly formed passive sentence?',
         options: [ { text:'My bike has been stolen.', correct:true }, { text:'My bike has stolen.', correct:false }, { text:'My bike was stolen has.', correct:false } ],
-        explain: 'Present-perfect passive needs "been" between "has" and the past participle.'
+        explain: 'Present-perfect passive needs "been" between "has" and the past participle.',
+        move: { subject:'Someone', verb:'has stolen', object:'my bike', aux:'has been', participle:'stolen', byAgent:null },
+        blanks: [ { role:'subject', text:'My bike' }, { role:'aux', text:'has been' }, { role:'participle', text:'stolen' } ],
+        bank: [ 'My bike', 'has been', 'stolen', 'has', 'stole' ]
       }
     ]
   },
@@ -388,7 +508,7 @@ const LEVELS = [
     title: 'Wh-Question Movement',
     icon: '🧭',
     accent: 'blue',
-    tagline: 'Point to send the wh-word all the way to the front.',
+    tagline: 'Drag the wh-word all the way to the front.',
     questions: [
       {
         prompt: 'Start: "She bought a car." To ask about "a car", which wh-word replaces it?',
@@ -478,7 +598,9 @@ const btnBackGate = document.getElementById('btn-back-gate');
 const video = document.getElementById('video');
 const camWrap = document.getElementById('cam-wrap');
 const floatingPanel = document.getElementById('floating-panel');
-const chipStack = document.getElementById('chip-stack');
+const blankRowEl = document.getElementById('blank-row');
+const wordBankEl = document.getElementById('word-bank');
+const dragGhostEl = document.getElementById('drag-ghost');
 const questionBanner = document.getElementById('question-banner');
 const cursorDot = document.getElementById('cursor-dot');
 const qcountEl = document.getElementById('qcount');
@@ -494,6 +616,18 @@ const xpTotalEl = document.getElementById('xp-total');
 const resultsStarsEl = document.getElementById('results-stars');
 const resultsXpEl = document.getElementById('results-xp');
 
+const sentenceMoverEl = document.getElementById('sentence-mover');
+const smLabel = document.getElementById('sm-label');
+const smStage = document.getElementById('sm-stage');
+const smSubjectEl = document.getElementById('sm-subject');
+const smVerbEl = document.getElementById('sm-verb');
+const smObjectEl = document.getElementById('sm-object');
+const smVerbActiveSpan = document.getElementById('sm-verb-active');
+const smVerbPassiveSpan = document.getElementById('sm-verb-passive');
+const smVerbAuxSpan = document.getElementById('sm-verb-aux');
+const smVerbPartSpan = document.getElementById('sm-verb-part');
+let smTimer = null;
+
 let currentLevel = null;
 let qIndex = 0;
 let score = 0;
@@ -507,6 +641,7 @@ let lastVideoTime = -1;
 let cursor = { x: null, y: null, visible: false };
 let headAnchor = { x: null, y: null };
 let hover = { el: null, since: 0 };
+let dragging = null; // { text } while a word-bank chunk is attached to the cursor
 let rafId = null;
 
 function getStars(){
@@ -562,6 +697,69 @@ function showXPToast(amount, nearEl){
 function updateStreakBadge(){
   badgeStreak.textContent = '🔥 ' + streak;
   badgeStreak.classList.toggle('active', streak >= 2);
+}
+
+// Sentence Mover: animates the active→passive rearrangement (object moves to
+// subject position, subject moves to/drops from the "by" slot) and crossfades
+// the verb from its active tense (blue) into "aux + past participle" (amber).
+function resetSentenceMover(){
+  if(smTimer){ clearTimeout(smTimer); smTimer = null; }
+  smStage.dataset.state = 'active';
+  smLabel.textContent = 'ACTIVE VOICE';
+  smSubjectEl.style.order = '';
+  smObjectEl.style.order = '';
+  smSubjectEl.style.transition = smObjectEl.style.transition = smVerbEl.style.transition = '';
+  smSubjectEl.style.transform = smObjectEl.style.transform = smVerbEl.style.transform = '';
+  smSubjectEl.classList.remove('sm-drop');
+  smObjectEl.classList.remove('sm-role-subject');
+  smVerbActiveSpan.style.opacity = '1';
+  smVerbPassiveSpan.style.opacity = '0';
+}
+
+function playSentenceMove(move){
+  resetSentenceMover();
+  if(!move){ sentenceMoverEl.classList.remove('show'); return; }
+  smSubjectEl.textContent = move.subject;
+  smObjectEl.textContent = move.object;
+  smVerbActiveSpan.textContent = move.verb;
+  smVerbAuxSpan.textContent = move.aux;
+  smVerbPartSpan.textContent = move.participle;
+  sentenceMoverEl.classList.add('show');
+
+  smTimer = setTimeout(() => {
+    const els = [smSubjectEl, smVerbEl, smObjectEl];
+    const before = els.map(el => el.getBoundingClientRect());
+
+    smLabel.textContent = 'PASSIVE VOICE';
+    smStage.dataset.state = 'passive';
+    smObjectEl.style.order = '1';
+    smSubjectEl.style.order = '3';
+    smObjectEl.classList.add('sm-role-subject');
+    if(move.byAgent){
+      smSubjectEl.textContent = 'by ' + move.subject;
+    } else {
+      smSubjectEl.classList.add('sm-drop');
+    }
+    smVerbActiveSpan.style.opacity = '0';
+    smVerbPassiveSpan.style.opacity = '1';
+
+    requestAnimationFrame(() => {
+      const after = els.map(el => el.getBoundingClientRect());
+      els.forEach((el, i) => {
+        const dx = before[i].left - after[i].left;
+        if(Math.abs(dx) < 0.5) return;
+        el.style.transition = 'none';
+        el.style.transform = `translateX(${dx}px)`;
+      });
+      void els[0].offsetWidth; // force reflow
+      requestAnimationFrame(() => {
+        els.forEach(el => {
+          el.style.transition = 'transform 650ms cubic-bezier(.22,.7,.3,1)';
+          el.style.transform = '';
+        });
+      });
+    });
+  }, 700);
 }
 
 function showScreen(name){
@@ -659,46 +857,130 @@ function startLevel(){
   loop();
 }
 
+// Questions answer via drag-and-drop: word/phrase pieces live in a bottom
+// word-bank tray, and get dragged (or tapped) into blank slots that sit in
+// the head-anchored floating panel. A question either carries its own
+// `blanks`/`bank` (multi-piece sentence building, used by Passive Voice's
+// "build the full sentence" questions) or falls back to a single blank
+// derived from its `options` (every other question, including the shorter
+// conceptual ones), so every question in the game answers the same way.
+function shuffle(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getBuildSpec(q){
+  if(q.blanks && q.bank) return { blanks: q.blanks, bank: shuffle(q.bank.slice()) };
+  const correct = q.options.find(o => o.correct);
+  return {
+    blanks: [ { role:'answer', text: correct.text } ],
+    bank: shuffle(q.options.map(o => o.text))
+  };
+}
+
+function placeholderMarkup(role){
+  return `<span class="placeholder-label">${role === 'answer' ? 'drop answer' : role}</span>`;
+}
+
+function clearBlank(slot){
+  slot.dataset.filled = 'false';
+  delete slot.dataset.currentText;
+  slot.classList.remove('filled', 'correct', 'incorrect');
+  slot.innerHTML = placeholderMarkup(slot.dataset.role);
+}
+
+function fillBlank(slot, text){
+  slot.dataset.filled = 'true';
+  slot.dataset.currentText = text;
+  slot.classList.add('filled');
+  slot.textContent = text;
+}
+
+function addBankChip(text){
+  const chip = document.createElement('button');
+  chip.className = 'bank-chip draggable';
+  chip.dataset.text = text;
+  chip.textContent = text;
+  chip.addEventListener('click', () => {
+    if(answered || dragging) return;
+    const emptyBlank = Array.from(blankRowEl.children).find(b => b.dataset.filled !== 'true');
+    if(!emptyBlank) return;
+    fillBlank(emptyBlank, text);
+    chip.remove();
+    checkComplete();
+  });
+  wordBankEl.appendChild(chip);
+  return chip;
+}
+
 function showQuestion(){
   answered = false;
+  dragging = null;
+  dragGhostEl.style.display = 'none';
   feedbackEl.classList.remove('show');
+  resetSentenceMover();
+  sentenceMoverEl.classList.remove('show');
   const q = currentLevel.questions[qIndex];
   qcountEl.textContent = `${currentLevel.title} · Question ${qIndex + 1} of ${currentLevel.questions.length}`;
   qtextEl.textContent = q.prompt;
-  chipStack.innerHTML = '';
-  q.options.forEach(opt => {
-    const chip = document.createElement('button');
-    chip.className = 'ar-chip pointable';
-    chip.innerHTML = `<span class="label">${opt.text}</span><span class="ring"></span>`;
-    chip.addEventListener('click', () => selectOption(chip, opt));
-    chipStack.appendChild(chip);
+
+  const spec = getBuildSpec(q);
+  blankRowEl.innerHTML = '';
+  spec.blanks.forEach(b => {
+    const slot = document.createElement('div');
+    slot.className = 'blank-slot';
+    slot.dataset.role = b.role;
+    slot.dataset.answer = b.text;
+    slot.dataset.filled = 'false';
+    slot.innerHTML = placeholderMarkup(b.role);
+    slot.addEventListener('click', () => {
+      if(answered || slot.dataset.filled !== 'true') return;
+      addBankChip(slot.dataset.currentText);
+      clearBlank(slot);
+    });
+    blankRowEl.appendChild(slot);
   });
+
+  wordBankEl.innerHTML = '';
+  wordBankEl.classList.remove('hide');
+  spec.bank.forEach(text => addBankChip(text));
 }
 
-function selectOption(el, opt){
+function checkComplete(){
+  const blanks = Array.from(blankRowEl.children);
+  if(blanks.length && blanks.every(b => b.dataset.filled === 'true')) evaluateAnswer();
+}
+
+function evaluateAnswer(){
   if(answered) return;
   answered = true;
   const q = currentLevel.questions[qIndex];
-  document.querySelectorAll('.ar-chip').forEach(c => {
-    c.classList.remove('hovered');
-    const r = c.querySelector('.ring');
-    if(r) r.style.background = '';
+  const blanks = Array.from(blankRowEl.children);
+  let allCorrect = true;
+  blanks.forEach(b => {
+    const right = b.dataset.currentText === b.dataset.answer;
+    b.classList.add(right ? 'correct' : 'incorrect');
+    if(!right) allCorrect = false;
   });
-  chipStack.querySelectorAll('.ar-chip').forEach((c, i) => {
-    if(q.options[i].correct) c.classList.add('correct');
-    else if(c === el) c.classList.add('incorrect');
-    else c.classList.add('dimmed');
-  });
-  if(opt.correct){
+  wordBankEl.classList.add('hide');
+  if(allCorrect){
     score++;
     streak++;
     addXP(10);
-    showXPToast(10, el);
+    showXPToast(10, blanks[0]);
   } else {
     streak = 0;
   }
   updateStreakBadge();
-  feedbackTextEl.textContent = (opt.correct ? '✅ ' : '❌ ') + q.explain;
+  feedbackTextEl.textContent = (allCorrect ? '✅ ' : '❌ ') + q.explain;
+  if(currentLevel.id === 'passive-voice' && q.move){
+    playSentenceMove(q.move);
+  } else {
+    sentenceMoverEl.classList.remove('show');
+  }
   feedbackEl.classList.add('show');
   btnContinue.classList.add('pointable');
 }
@@ -717,8 +999,13 @@ function finishLevel(){
   stopEverything();
   qtextEl.textContent = '';
   qcountEl.textContent = '';
-  chipStack.innerHTML = '';
+  blankRowEl.innerHTML = '';
+  wordBankEl.innerHTML = '';
+  dragging = null;
+  dragGhostEl.style.display = 'none';
   feedbackEl.classList.remove('show');
+  resetSentenceMover();
+  sentenceMoverEl.classList.remove('show');
   const total = currentLevel.questions.length;
   const allCorrect = score === total;
   const earnedStars = starsForScore(score, total);
@@ -791,12 +1078,62 @@ function updateChipPosition(){
   floatingPanel.style.top = y + 'px';
 }
 
-function updateHover(){
+function grabChip(chip){
+  dragging = { text: chip.dataset.text };
+  chip.remove();
+  dragGhostEl.textContent = dragging.text;
+  dragGhostEl.style.display = 'flex';
+  dragGhostEl.style.left = cursor.x + 'px';
+  dragGhostEl.style.top = cursor.y + 'px';
+}
+
+function dropOnSlot(slot){
+  const text = dragging.text;
+  if(slot.dataset.filled === 'true'){ addBankChip(slot.dataset.currentText); }
+  fillBlank(slot, text);
+  dragging = null;
+  dragGhostEl.style.display = 'none';
+  checkComplete();
+}
+
+function cancelDrag(){
+  if(!dragging) return;
+  addBankChip(dragging.text);
+  dragging = null;
+  dragGhostEl.style.display = 'none';
+}
+
+function updateDrag(){
   if(answered){
+    if(dragging) cancelDrag();
     if(btnContinue.classList.contains('pointable')) hitTest([btnContinue]);
     return;
   }
-  hitTest(Array.from(document.querySelectorAll('.ar-chip.pointable')));
+  if(!cursor.visible){
+    if(dragging) cancelDrag();
+    return;
+  }
+  if(dragging){
+    dragGhostEl.style.left = cursor.x + 'px';
+    dragGhostEl.style.top = cursor.y + 'px';
+    const slots = Array.from(blankRowEl.querySelectorAll('.blank-slot'));
+    for(const slot of slots){
+      const r = localRectOf(slot);
+      if(cursor.x >= r.left && cursor.x <= r.right && cursor.y >= r.top && cursor.y <= r.bottom){
+        dropOnSlot(slot);
+        break;
+      }
+    }
+  } else {
+    const chips = Array.from(wordBankEl.querySelectorAll('.bank-chip'));
+    for(const chip of chips){
+      const r = localRectOf(chip);
+      if(cursor.x >= r.left && cursor.x <= r.right && cursor.y >= r.top && cursor.y <= r.bottom){
+        grabChip(chip);
+        break;
+      }
+    }
+  }
 }
 
 function hitTest(elements){
@@ -878,7 +1215,7 @@ function loop(){
   }
 
   updateChipPosition();
-  updateHover();
+  updateDrag();
 }
 
 renderLevelList();
