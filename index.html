@@ -13,6 +13,9 @@
     --brand-blue:#0047B6; --brand-blue-deep:#00348A; --brand-blue-soft:#E4EDFC;
     --brand-red:#D81F2A; --brand-amber:#FFB300; --brand-amber-deep:#C98800;
     --chip:#0047B6; --ui-accent:#0047B6; --success:#1FA25A; --error:#D81F2A;
+    /* Sentence-role colours (tuned to read on the dark AR panels) */
+    --role-doer:#C4A1FF; --role-rec:#4ADE80; --role-verb:#6EA8FF; --role-be:#FFA24C;
+    --end-past:#FFD84D; --end-part:#FF7AC6;
     --font-display:'Baloo 2', system-ui, sans-serif;
     --font-body:'Mulish', -apple-system, 'Segoe UI', Roboto, sans-serif;
     --font-mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
@@ -103,6 +106,22 @@
     max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
 
+  /* Question navigation: back / retry / skip-next, under the question counter */
+  #q-nav{
+    position:absolute; top:60px; left:0; right:0; z-index:6;
+    display:flex; justify-content:center; gap:8px; padding:0 12px;
+  }
+  .nav-btn{
+    font-family:var(--font-display); font-weight:700; font-size:12.5px; color:#fff;
+    background:rgba(6,14,32,.78); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+    border:1.5px solid rgba(255,255,255,.45); border-radius:99px;
+    padding:6px 13px; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.35);
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  .nav-btn:active{ transform:scale(.95); }
+  .nav-btn:disabled{ opacity:.35; cursor:default; transform:none; }
+  .nav-btn.primary{ background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900; border-color:rgba(255,255,255,.7); }
+
   .ar-chip{
     position:relative; font-family:var(--font-display); font-weight:700; font-size:13px; color:#fff;
     background:linear-gradient(180deg, #3B7DDE, var(--brand-blue)); border:1.5px solid rgba(255,255,255,.6); border-radius:12px;
@@ -133,13 +152,43 @@
     padding:9px 12px; min-height:18px;
     text-align:center; line-height:1.25; word-break:break-word;
     display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(180deg, #3B7DDE, var(--brand-blue));
+    background:linear-gradient(180deg, #16284F, #0B1A38);
     box-shadow:0 4px 12px rgba(0,20,60,.4); cursor:pointer;
     animation:token-pop 200ms cubic-bezier(.22,.9,.4,1.2);
   }
   @keyframes token-pop{ 0%{ transform:scale(.6); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
-  .answer-token.correct{ background:linear-gradient(180deg, #35C57F, var(--success)); cursor:default; }
-  .answer-token.incorrect{ background:linear-gradient(180deg, #E6555F, var(--brand-red)); cursor:default; }
+  .answer-token.correct, .answer-token.incorrect{ cursor:default; }
+  .answer-token.incorrect{ border-color:var(--brand-red); border-width:2.5px; }
+  .answer-token.correct::after, .answer-token.incorrect::after{
+    position:absolute; top:-7px; right:-7px; width:16px; height:16px; border-radius:50%;
+    font-size:10px; line-height:16px; text-align:center; color:#fff; font-family:var(--font-body); font-weight:800;
+  }
+  .answer-token.correct::after{ content:'✓'; background:var(--success); }
+  .answer-token.incorrect::after{ content:'✗'; background:var(--brand-red); }
+
+  /* Sentence roles: purple doer, green receiver, blue main verb, orange be-verb */
+  .r-doer{ color:var(--role-doer); }
+  .r-rec{ color:var(--role-rec); }
+  .r-verb{ color:var(--role-verb); }
+  .r-be{ color:var(--role-be); }
+  /* verb endings: yellow "-ed" = past tense (active), pink "-ed" = past participle (passive) */
+  .end-past{ color:var(--end-past); }
+  .end-part{ color:var(--end-part); }
+  .answer-token.r-doer{ border-color:var(--role-doer); }
+  .answer-token.r-rec{ border-color:var(--role-rec); }
+  .answer-token.r-verb{ border-color:var(--role-verb); }
+  .answer-token.r-be{ border-color:var(--role-be); }
+  /* the "by ..." doer phrase is optional in the passive: dashed box */
+  .optional-group{
+    position:relative; display:flex; flex-wrap:wrap; gap:7px; justify-content:center;
+    padding:6px; border:2px dashed var(--role-doer); border-radius:15px;
+  }
+  .optional-group::before{
+    content:'optional'; position:absolute; top:-8px; left:10px; padding:0 5px;
+    font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--role-doer); background:#0B1A38; border-radius:4px;
+  }
+  #qtext .q-lead{ display:block; font-family:var(--font-body); font-weight:600; font-size:11.5px; color:rgba(255,255,255,.7); margin-bottom:3px; }
 
   #word-tray{
     position:absolute; left:0; right:0; bottom:14px; z-index:4;
@@ -155,19 +204,20 @@
     box-shadow:0 4px 10px rgba(0,0,0,.35); cursor:pointer;
   }
 
-  #cursor-dot{
-    position:absolute; width:20px; height:20px; border-radius:50%; background:rgba(255,179,0,.92);
-    border:2.5px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.3); transform:translate(-50%,-50%);
-    z-index:6; pointer-events:none; display:none;
-  }
-
   #ar-feedback{
     position:absolute; left:0; right:0; bottom:0; z-index:7; padding:10px;
     background:linear-gradient(to top, rgba(6,14,32,.9), rgba(6,14,32,0));
     color:#fff; display:none;
   }
-  #ar-feedback.show{ display:block; }
+  #ar-feedback.show{ display:block; max-height:60%; overflow-y:auto; }
   #ar-feedback p{ margin:0 0 8px; font-size:12.5px; font-weight:600; text-align:center; }
+  #feedback-text .fb-head{ display:block; font-family:var(--font-display); font-size:14px; margin-bottom:4px; }
+  #feedback-text ul.fb-why{ list-style:none; margin:0 auto 6px; padding:0; max-width:560px; text-align:left; }
+  #feedback-text ul.fb-why li{ position:relative; padding-left:16px; margin-bottom:4px; font-weight:600; line-height:1.35; }
+  #feedback-text ul.fb-why li::before{ content:'•'; position:absolute; left:4px; color:var(--brand-amber); }
+  #feedback-text .fb-answer{ display:block; margin-top:4px; font-family:var(--font-display); font-weight:700; font-size:14px; }
+  #feedback-text .fb-answer small{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.6); margin-right:6px; }
+  #feedback-text .fb-answer .optional-inline{ border:1.5px dashed var(--role-doer); border-radius:6px; padding:0 4px; }
   #ar-feedback .ar-chip{ margin:0 auto; display:block; width:fit-content; background:linear-gradient(180deg, var(--brand-amber), var(--brand-amber-deep)); color:#3A2900; font-weight:800; padding:9px 20px; }
 
   /* Sentence Mover: shows the active→passive rearrangement, only on the Passive Voice level */
@@ -184,22 +234,34 @@
   }
   .sm-tok{ font-family:var(--font-body); font-weight:700; font-size:12.5px; color:#fff; white-space:nowrap; }
   .sm-tok.sm-subject, .sm-tok.sm-object{
-    padding:4px 9px; border-radius:8px; background:rgba(255,255,255,.09); transition:opacity .45s ease, background .3s ease;
+    padding:4px 9px; border-radius:8px; transition:opacity .45s ease, border-color .3s ease;
+    border:1.5px solid transparent;
   }
-  .sm-tok.sm-object.sm-role-subject{ background:rgba(255,179,0,.18); box-shadow:inset 0 0 0 1px rgba(255,179,0,.5); }
+  .sm-tok.sm-subject{ color:var(--role-doer); background:rgba(196,161,255,.14); }
+  .sm-tok.sm-object{ color:var(--role-rec); background:rgba(74,222,128,.14); }
+  .sm-tok.sm-object.sm-role-subject{ box-shadow:0 0 0 2px rgba(74,222,128,.55); }
+  .sm-tok.sm-subject.sm-optional{ border:1.5px dashed var(--role-doer); }
   .sm-tok.sm-subject.sm-drop{ opacity:0; }
-  .sm-verb{ display:inline-flex; align-items:center; }
-  .sm-verb-active{ color:#6EA8FF; font-weight:800; transition:opacity .35s ease; }
+  .sm-verb{ display:inline-flex; align-items:center; position:relative; }
+  /* only the visible form of the verb takes up space, so the passive line closes up neatly */
+  .sm-stage[data-state="active"] .sm-verb-passive, .sm-stage[data-state="passive"] .sm-verb-active{
+    position:absolute; left:0; top:50%; transform:translateY(-50%); white-space:nowrap; pointer-events:none;
+  }
+  .sm-verb-active{ color:var(--role-verb); font-weight:800; transition:opacity .35s ease; }
   .sm-verb-passive{ align-items:center; opacity:0; transition:opacity .35s ease; }
-  .sm-verb-passive .aux{ color:rgba(255,255,255,.85); font-weight:700; margin-right:5px; }
-  .sm-verb-passive .part{ color:var(--brand-amber); font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+  .sm-verb-passive .aux{ color:var(--role-be); font-weight:800; margin-right:5px; }
+  .sm-verb-passive .part{ color:var(--role-verb); font-weight:800; }
   .sm-legend{
-    display:flex; justify-content:center; gap:14px; margin-top:7px;
+    display:flex; flex-wrap:wrap; justify-content:center; gap:6px 14px; margin-top:7px;
     font-family:var(--font-mono); font-size:9px; color:rgba(255,255,255,.65);
   }
   .sm-legend .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
-  .sm-legend .dot.blue{ background:#6EA8FF; }
-  .sm-legend .dot.amber{ background:var(--brand-amber); }
+  .sm-legend .dot.doer{ background:var(--role-doer); }
+  .sm-legend .dot.rec{ background:var(--role-rec); }
+  .sm-legend .dot.verb{ background:var(--role-verb); }
+  .sm-legend .dot.be{ background:var(--role-be); }
+  .sm-legend .dot.endpast{ background:var(--end-past); }
+  .sm-legend .dot.endpart{ background:var(--end-part); }
 
   #track-status{
     position:absolute; top:8px; right:10px; z-index:8; display:flex; gap:6px;
@@ -222,6 +284,13 @@
   }
 
   .result-stars{ font-size:2rem; letter-spacing:6px; margin:2px 0 16px; }
+  .best-stars{ font-size:1.2rem; letter-spacing:4px; margin:-8px 0 18px; color:var(--brand-amber); min-height:1em; }
+  .color-key{ background:#0B1A38; color:#fff; border-color:#0B1A38; }
+  .color-key strong{ display:block; margin-bottom:8px; }
+  .color-key .ex{ font-family:var(--font-display); font-weight:700; font-size:15px; margin:6px 0 2px; }
+  .color-key .note{ font-size:12.5px; color:rgba(255,255,255,.75); margin:0 0 6px; }
+  .color-key .ex + .note{ margin-top:10px; }
+  .key-optional{ border:1.5px dashed var(--role-doer); border-radius:6px; padding:0 4px; white-space:nowrap; }
 
   #gate-loading{ display:none; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); margin-top:14px; }
   #gate-loading.show{ display:flex; }
@@ -243,29 +312,33 @@
 
 <div class="wrap" id="wrap-outer">
 
-  <section id="screen-levels" class="screen active">
+  <section id="screen-home" class="screen active">
     <div class="brand-dots"><span></span><span></span><span></span></div>
     <div class="xp-badge">⭐ <span id="xp-total">0</span> XP</div>
     <p class="eyebrow">Sentence Movers · AR</p>
-    <h1>Touch to answer.</h1>
-    <p class="lede">Your answer pieces sit in a tray at the bottom of the camera. Read the question, then touch the words in order — with your fingertip in the air, or just a tap on the screen — to build your answer above your head.</p>
-    <div id="level-list"></div>
-  </section>
-
-  <section id="screen-gate" class="screen">
-    <button class="btn-back" id="btn-back-gate">← Levels</button>
-    <h1 id="gate-title"></h1>
+    <h1>Passive Voice</h1>
+    <p class="lede">Swap the spotlight from the doer to the receiver. Five sentences, rebuilt one word at a time.</p>
+    <div class="best-stars" id="best-stars"></div>
     <div class="panel">
       <strong>How to play</strong>
       <ul>
-        <li>Prop your phone up so your head and one hand fit in frame.</li>
-        <li>Read the question, then touch the words in the tray at the bottom, in the right order, to build your answer above your head.</li>
-        <li>Tapped a word by mistake? Touch it again right away — while it's still the last one placed — to undo it.</li>
-        <li>Can't get hand-tracking to work? You can always just tap the words on screen instead.</li>
+        <li>Prop your phone up so your face is in frame — the question floats above your head.</li>
+        <li>Read the active sentence, then tap the words in the tray at the bottom of the screen, in order, to build the passive version.</li>
+        <li>Tapped a word by mistake? Tap it again straight away (while it's the last word placed) to undo it.</li>
       </ul>
     </div>
+    <div class="panel color-key">
+      <strong>Colour key</strong>
+      <p class="ex"><span class="r-doer">The teacher</span> <span class="r-verb">mark<span class="end-past">ed</span></span> <span class="r-rec">the assignments</span>.</p>
+      <p class="ex"><span class="r-rec">The assignments</span> <span class="r-be">were</span> <span class="r-verb">mark<span class="end-part">ed</span></span> <span class="key-optional r-doer">by the teacher</span>.</p>
+      <p class="note"><span class="r-doer">Purple — the doer.</span> Keeps its colour when it drops to the end as “by the teacher”. The dashed box shows it's optional.</p>
+      <p class="note"><span class="r-rec">Green — the receiver.</span> Moves from the end to the front.</p>
+      <p class="note"><span class="r-verb">Blue — the main verb.</span> Keeps its colour but changes form (broke → broken): the same verb in a new form.</p>
+      <p class="note"><span class="end-past">Yellow “-ed”</span> — past tense in the active sentence. It turns <span class="end-part">pink “-ed”</span> when the verb becomes a past participle.</p>
+      <p class="note"><span class="r-be">Orange — the be-verb.</span> A new piece with no match in the active sentence. It carries the tense.</p>
+    </div>
     <button class="btn" id="btn-start-camera">▶ Turn on camera &amp; start</button>
-    <div id="gate-loading"><div class="spinner"></div><span id="gate-loading-text">Loading pointing &amp; face tracking…</span></div>
+    <div id="gate-loading"><div class="spinner"></div><span id="gate-loading-text">Loading face tracking…</span></div>
     <p class="status-line" id="gate-status"></p>
   </section>
 
@@ -278,7 +351,6 @@
     <p class="lede" id="results-score"></p>
     <p class="lede" id="results-xp"></p>
     <button class="btn" id="btn-retry">↺ Play again</button>
-    <button class="btn secondary" id="btn-results-back" style="margin-top:10px;">← Back to levels</button>
   </section>
 
 </div>
@@ -289,9 +361,13 @@
     <div id="track-status">
       <span class="dot-badge streak" id="badge-streak">🔥 0</span>
       <span class="dot-badge" id="badge-face">face</span>
-      <span class="dot-badge" id="badge-hand">hand</span>
     </div>
     <div id="qcount-bar"><span class="qcount" id="qcount"></span></div>
+    <div id="q-nav">
+      <button class="nav-btn" id="btn-prev" aria-label="Previous question">◀ Back</button>
+      <button class="nav-btn" id="btn-retry-q" aria-label="Retry this question">↻ Retry</button>
+      <button class="nav-btn" id="btn-next" aria-label="Skip to the next question">Skip ▶</button>
+    </div>
     <div id="floating-panel">
       <div id="question-banner">
         <span id="qtext"></span>
@@ -299,7 +375,6 @@
       <div id="answer-row"></div>
     </div>
     <div id="word-tray"></div>
-    <div id="cursor-dot"></div>
     <div id="xp-toast"></div>
     <div id="ar-feedback">
       <div id="sentence-mover">
@@ -312,7 +387,7 @@
           </span>
           <span class="sm-tok sm-object" id="sm-object"></span>
         </div>
-        <div class="sm-legend"><span><span class="dot blue"></span>active verb</span><span><span class="dot amber"></span>passive participle</span></div>
+        <div class="sm-legend"><span><span class="dot doer"></span>doer</span><span><span class="dot rec"></span>receiver</span><span><span class="dot verb"></span>main verb</span><span><span class="dot be"></span>be-verb</span><span><span class="dot endpast"></span>-ed past</span><span><span class="dot endpart"></span>-ed participle</span></div>
       </div>
       <p id="feedback-text"></p>
       <button class="ar-chip" id="btn-continue">Continue →</button>
@@ -321,78 +396,9 @@
 </section>
 
 <script type="module">
-import { HandLandmarker, FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision";
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision";
 
 const LEVELS = [
-  {
-    id: 'question-formation',
-    title: 'Question Formation',
-    icon: '❓',
-    accent: 'blue',
-    tagline: 'Touch the words, in order, to build the question.',
-    questions: [
-      {
-        prompt: 'Start: "She is happy." Which word has to move to ask a question?',
-        options: [ { text:'She', correct:false }, { text:'is', correct:true }, { text:'happy', correct:false } ],
-        explain: '"is" is the auxiliary — it\'s the piece that moves.'
-      },
-      {
-        prompt: 'In English yes/no questions like "She is happy." → "Is she happy?", which direction does the auxiliary move?',
-        options: [ { text:'To the front', correct:true }, { text:'To the end', correct:false }, { text:'Nowhere — it stays', correct:false } ],
-        explain: 'Yes/no questions move the auxiliary all the way to the front.'
-      },
-      {
-        prompt: 'Start: "She is happy." Which is the correctly formed question?',
-        options: [ { text:'Is she happy?', correct:true }, { text:'She is happy?', correct:false }, { text:'Happy she is?', correct:false } ],
-        explain: '"Is" fronts, "she" follows, the rest stays put.'
-      },
-      {
-        prompt: 'Start: "They are ready." Which is the correctly formed question?',
-        options: [ { text:'Are they ready?', correct:true }, { text:'They are ready?', correct:false }, { text:'Ready are they?', correct:false } ],
-        explain: 'Same move, new sentence: the auxiliary "are" fronts.'
-      },
-      {
-        prompt: 'Start: "He can swim." Which word moves to the front?',
-        options: [ { text:'He', correct:false }, { text:'can', correct:true }, { text:'swim', correct:false } ],
-        explain: 'Modal auxiliaries like "can" front too, not just "is/are".'
-      },
-      {
-        prompt: 'Which is the correctly formed question for "He can swim."?',
-        options: [ { text:'Can he swim?', correct:true }, { text:'He can swim?', correct:false }, { text:'Swim can he?', correct:false } ],
-        explain: '"Can" fronts, "he" follows, "swim" stays at the end.'
-      },
-      {
-        prompt: 'Start: "She likes tea." There\'s no auxiliary here to move — what does English add instead?',
-        options: [ { text:'does', correct:true }, { text:'is', correct:false }, { text:'has', correct:false } ],
-        explain: 'No auxiliary to front, so English inserts "do/does/did".'
-      },
-      {
-        prompt: 'Start: "She likes tea." Once "does" is added and fronted to form the question, what happens to "likes"?',
-        options: [ { text:'Stays "likes"', correct:false }, { text:'Changes to "like"', correct:true }, { text:'Changes to "liking"', correct:false } ],
-        explain: '"Does" carries the tense now, so the main verb drops back to its base form.'
-      },
-      {
-        prompt: 'Which is the correctly formed question for "She likes tea."?',
-        options: [ { text:'Does she like tea?', correct:true }, { text:'Does she likes tea?', correct:false }, { text:'Likes she tea?', correct:false } ],
-        explain: 'Insert "does", front it, and the main verb goes back to base form.'
-      },
-      {
-        prompt: 'Start: "They have finished." Which is the correctly formed question?',
-        options: [ { text:'Have they finished?', correct:true }, { text:'They have finished?', correct:false }, { text:'Do they have finished?', correct:false } ],
-        explain: '"Have" is already an auxiliary here, so it fronts directly — no "do" needed.'
-      },
-      {
-        prompt: 'Start: "The train arrives at noon." Which is the correctly formed question?',
-        options: [ { text:'Does the train arrive at noon?', correct:true }, { text:'Does the train arrives at noon?', correct:false }, { text:'Arrives the train at noon?', correct:false } ],
-        explain: '"Does" fronts as the inserted auxiliary, and "arrives" drops to its base form "arrive".'
-      },
-      {
-        prompt: 'Start: "The children were playing outside." Which word fronts to form the question?',
-        options: [ { text:'The children', correct:false }, { text:'were', correct:true }, { text:'playing', correct:false } ],
-        explain: '"Were" is the auxiliary here, so it\'s the piece that moves to the front.'
-      }
-    ]
-  },
   {
     id: 'passive-voice',
     title: 'Passive Voice',
@@ -402,117 +408,105 @@ const LEVELS = [
     questions: [
       {
         prompt: 'Turn this sentence into the passive voice: "The teacher marked the assignments."',
-        answerWords: [ 'The', 'assignments', 'were', 'marked', 'by', 'the', 'teacher.' ],
+        active: 'The teacher marked the assignments.',
+        activeRoles: [['The teacher','doer'],['marked','verb'],['the assignments','rec'],['.']],
+        activeEnding: { word:'marked', end:'ed' },
+        participleEnding: { word:'marked', end:'ed' },
+        answerWords: [ 'The', 'assignments', 'were', 'marked', 'by', 'the', 'teacher' ],
+        answerRoles: [ 'rec','rec','be','verb','doer','doer','doer' ],
         distractors: [ 'was', 'marks' ],
-        explain: 'Past simple passive: "the assignments" (the object) becomes the subject, and "marked" → "were marked" — plural subject, so "were", not "was".',
+        why: {
+          was: '"was" is for one thing, but "the assignments" is plural — so it needs "were".',
+          marks: '"marks" is present tense. The passive needs the past participle "marked".'
+        },
+        explain: 'Past simple passive: "the assignments" (the receiver) moves to the front, and "marked" → "were marked". Plural subject, so "were", not "was".',
         move: { subject:'The teacher', verb:'marked', object:'the assignments', aux:'were', participle:'marked', byAgent:'the teacher' }
       },
       {
         prompt: 'Turn this sentence into the passive voice: "The students are painting the mural."',
-        answerWords: [ 'The', 'mural', 'is', 'being', 'painted', 'by', 'the', 'students.' ],
+        active: 'The students are painting the mural.',
+        activeRoles: [['The students','doer'],['are painting','verb'],['the mural','rec'],['.']],
+        activeEnding: null,
+        participleEnding: { word:'painted', end:'ed' },
+        answerWords: [ 'The', 'mural', 'is', 'being', 'painted', 'by', 'the', 'students' ],
+        answerRoles: [ 'rec','rec','be','be','verb','doer','doer','doer' ],
         distractors: [ 'was', 'paint' ],
+        why: {
+          was: '"was" puts it in the past. The active sentence is happening now ("are painting"), so use "is being".',
+          paint: '"paint" is the base form. After "is being" you need the past participle "painted".'
+        },
         explain: 'Present continuous passive: "is/are being" + past participle. "The mural" is singular, so "is being painted".',
         move: { subject:'The students', verb:'are painting', object:'the mural', aux:'is being', participle:'painted', byAgent:'the students' }
       },
       {
         prompt: 'Turn this sentence into the passive voice: "The committee will announce the results tomorrow."',
-        answerWords: [ 'The', 'results', 'will', 'be', 'announced', 'by', 'the', 'committee', 'tomorrow.' ],
+        active: 'The committee will announce the results tomorrow.',
+        activeRoles: [['The committee','doer'],['will announce','verb'],['the results','rec'],['tomorrow.']],
+        activeEnding: null,
+        participleEnding: { word:'announced', end:'ed' },
+        answerWords: [ 'The', 'results', 'will', 'be', 'announced', 'by', 'the', 'committee', 'tomorrow' ],
+        answerRoles: [ 'rec','rec','be','be','verb','doer','doer','doer',null ],
+        // Also good English — accepted, with a note about the usual order
+        alternates: [
+          { words: [ 'The', 'results', 'will', 'be', 'announced', 'tomorrow', 'by', 'the', 'committee' ],
+            roles: [ 'rec','rec','be','be','verb',null,'doer','doer','doer' ],
+            note: 'Also correct! But the usual pattern leaves "tomorrow" at the very end, where it was in the active sentence — only the doer and the receiver swap places.' }
+        ],
+        extra: { words: [ 'tomorrow' ],
+          why: '"tomorrow" tells us WHEN. It isn\'t the doer or the receiver, so it doesn\'t move — it stays at the end, just like in the active sentence.' },
         distractors: [ 'was', 'announce' ],
-        explain: 'Future passive keeps "will", adds "be", then the past participle: "will be announced".',
+        why: {
+          was: '"was" is past, but the active sentence is about the future ("will announce") — so keep "will" and add "be".',
+          announce: '"announce" is the base form. After "will be" you need the past participle "announced".'
+        },
+        explain: 'Future passive keeps "will", adds "be", then the past participle: "will be announced". "Tomorrow" stays at the end — only the doer and receiver swap places.',
         move: { subject:'The committee', verb:'will announce', object:'the results', aux:'will be', participle:'announced', byAgent:'the committee' }
       },
       {
         prompt: 'Turn this sentence into the passive voice: "Someone has stolen my bicycle."',
-        answerWords: [ 'My', 'bicycle', 'has', 'been', 'stolen.' ],
+        active: 'Someone has stolen my bicycle.',
+        activeRoles: [['Someone','doer'],['has stolen','verb'],['my bicycle','rec'],['.']],
+        activeEnding: null,
+        participleEnding: { word:'stolen', end:'en' },
+        answerWords: [ 'My', 'bicycle', 'has', 'been', 'stolen' ],
+        answerRoles: [ 'rec','rec','be','be','verb' ],
         distractors: [ 'was', 'steal' ],
+        why: {
+          was: '"was" is simple past. The active sentence uses "has stolen" (present perfect), so the passive keeps "has" and adds "been".',
+          steal: '"steal" is the base form. After "has been" you need the past participle "stolen".'
+        },
         explain: 'Present-perfect passive needs "has been" + past participle. The doer ("someone") is unknown, so the "by" phrase is dropped entirely.',
         move: { subject:'Someone', verb:'has stolen', object:'my bicycle', aux:'has been', participle:'stolen', byAgent:null }
       },
       {
         prompt: 'Turn this sentence into the passive voice: "The chef was preparing a special dish for the guests."',
-        answerWords: [ 'A', 'special', 'dish', 'was', 'being', 'prepared', 'for', 'the', 'guests', 'by', 'the', 'chef.' ],
+        active: 'The chef was preparing a special dish for the guests.',
+        activeRoles: [['The chef','doer'],['was preparing','verb'],['a special dish','rec'],['for the guests.']],
+        activeEnding: null,
+        participleEnding: { word:'prepared', end:'ed' },
+        answerWords: [ 'A', 'special', 'dish', 'was', 'being', 'prepared', 'by', 'the', 'chef', 'for', 'the', 'guests' ],
+        answerRoles: [ 'rec','rec','rec','be','be','verb','doer','doer','doer',null,null,null ],
+        alternates: [
+          { words: [ 'A', 'special', 'dish', 'was', 'being', 'prepared', 'for', 'the', 'guests', 'by', 'the', 'chef' ],
+            roles: [ 'rec','rec','rec','be','be','verb',null,null,null,'doer','doer','doer' ],
+            note: 'Also correct! But the usual pattern leaves "for the guests" at the very end, where it was in the active sentence — only the doer and the receiver swap places.' }
+        ],
+        extra: { words: [ 'for', 'the', 'guests' ],
+          why: '"for the guests" tells us WHO IT\'S FOR. It isn\'t the doer or the receiver, so it doesn\'t move — it stays at the end, just like in the active sentence.' },
         distractors: [ 'is', 'prepare' ],
-        explain: 'Past continuous passive: "was/were being" + past participle. "A special dish" is singular, so "was being prepared".',
+        why: {
+          is: '"is" is present, but the active sentence is in the past ("was preparing"), so use "was being".',
+          prepare: '"prepare" is the base form. After "was being" you need the past participle "prepared".'
+        },
+        explain: 'Past continuous passive: "was/were being" + past participle. "A special dish" is singular, so "was being prepared". "For the guests" stays at the end.',
         move: { subject:'The chef', verb:'was preparing', object:'a special dish', aux:'was being', participle:'prepared', byAgent:'the chef' }
-      }
-    ]
-  },
-  {
-    id: 'wh-movement',
-    title: 'Wh-Question Movement',
-    icon: '🧭',
-    accent: 'blue',
-    tagline: 'Touch the words, in order, to build the question.',
-    questions: [
-      {
-        prompt: 'Start: "She bought a car." To ask about "a car", which wh-word replaces it?',
-        options: [ { text:'What', correct:true }, { text:'Who', correct:false }, { text:'Where', correct:false } ],
-        explain: '"What" stands in for a thing — here, the object "a car".'
-      },
-      {
-        prompt: 'Start: "She bought a car." Which is the correctly formed wh-question?',
-        options: [ { text:'What did she buy?', correct:true }, { text:'What she bought?', correct:false }, { text:'She bought what?', correct:false } ],
-        explain: '"What" fronts, "did" is inserted and also fronts, and "bought" drops to base form "buy".'
-      },
-      {
-        prompt: 'Start: "Tom lives in Paris." To ask about the place "in Paris", which wh-word do you use?',
-        options: [ { text:'Where', correct:true }, { text:'What', correct:false }, { text:'Who', correct:false } ],
-        explain: '"Where" stands in for a place.'
-      },
-      {
-        prompt: 'Start: "Tom lives in Paris." Which is the correctly formed wh-question?',
-        options: [ { text:'Where does Tom live?', correct:true }, { text:'Where Tom lives?', correct:false }, { text:'Does Tom live where?', correct:false } ],
-        explain: '"Where" fronts all the way, "does" fronts too, and "lives" goes back to base form.'
-      },
-      {
-        prompt: 'Start: "Maria called her friend." Which part does the wh-word "who" replace here?',
-        options: [ { text:'Maria', correct:false }, { text:'called', correct:false }, { text:'her friend', correct:true } ],
-        explain: '"Who" is asking about the person being called — the object "her friend".'
-      },
-      {
-        prompt: 'Which is the correctly formed wh-question for "Maria called her friend." (asking about the object)?',
-        options: [ { text:'Who did Maria call?', correct:true }, { text:'Who Maria called?', correct:false }, { text:'Maria called who?', correct:false } ],
-        explain: 'Object wh-questions still need "did" fronted along with the wh-word.'
-      },
-      {
-        prompt: 'Start: "Maria called her friend." Now asking about the subject — who did the calling — which is correctly formed?',
-        options: [ { text:'Who called her friend?', correct:true }, { text:'Who did call her friend?', correct:false }, { text:'Did who call her friend?', correct:false } ],
-        explain: 'When the wh-word replaces the subject, it\'s already in front position — no "do" needed.'
-      },
-      {
-        prompt: 'Start: "The train leaves at 6pm." Which is the correctly formed wh-question asking about the time?',
-        options: [ { text:'When does the train leave?', correct:true }, { text:'When the train leaves?', correct:false }, { text:'The train leaves when?', correct:false } ],
-        explain: '"When" fronts, "does" fronts with it, "leaves" goes back to base form "leave".'
-      },
-      {
-        prompt: 'Start: "They are arguing because of money." Which is the correctly formed wh-question asking for the reason?',
-        options: [ { text:'Why are they arguing?', correct:true }, { text:'Why they are arguing?', correct:false }, { text:'Are they arguing why?', correct:false } ],
-        explain: '"Why" fronts, and since "are" is already an auxiliary, it fronts too — no "do" needed.'
-      },
-      {
-        prompt: 'Start: "She is talking to her manager." "Who" replaces "her manager", the object of "to". Which is the natural everyday wh-question?',
-        options: [ { text:'Who is she talking to?', correct:true }, { text:'Is she talking to who?', correct:false }, { text:'She is talking to who?', correct:false } ],
-        explain: 'Everyday English strands the preposition at the end: "to" stays behind while "who" moves to the front.'
-      },
-      {
-        prompt: 'Start: "He wants to buy a new laptop." Which is the correctly formed wh-question asking what he wants to buy?',
-        options: [ { text:'What does he want to buy?', correct:true }, { text:'What he wants to buy?', correct:false }, { text:'He wants to buy what?', correct:false } ],
-        explain: '"What" fronts with "does", and "wants" drops back to base form "want".'
-      },
-      {
-        prompt: 'In an embedded question like "I wonder what she bought," does the word order invert the way it does in a direct question ("What did she buy?")?',
-        options: [ { text:'No — the subject and verb stay in normal order', correct:true }, { text:'Yes, it always inverts the same way', correct:false }, { text:'Only when the wh-word is "who"', correct:false } ],
-        explain: 'Embedded questions keep statement word order ("she bought") — only direct questions trigger subject-auxiliary inversion.'
       }
     ]
   }
 ];
 
-const DWELL_MS = 850;
-
 const screens = {
-  levels: document.getElementById('screen-levels'),
-  gate: document.getElementById('screen-gate'),
+  home: document.getElementById('screen-home'),
   ar: document.getElementById('screen-ar'),
   results: document.getElementById('screen-results')
 };
@@ -520,14 +514,10 @@ const resultsEyebrow = document.getElementById('results-eyebrow');
 const resultsTitle = document.getElementById('results-title');
 const resultsScore = document.getElementById('results-score');
 const btnRetry = document.getElementById('btn-retry');
-const btnResultsBack = document.getElementById('btn-results-back');
-const levelList = document.getElementById('level-list');
-const gateTitle = document.getElementById('gate-title');
 const gateStatus = document.getElementById('gate-status');
 const gateLoading = document.getElementById('gate-loading');
 const gateLoadingText = document.getElementById('gate-loading-text');
 const btnStartCamera = document.getElementById('btn-start-camera');
-const btnBackGate = document.getElementById('btn-back-gate');
 
 const video = document.getElementById('video');
 const camWrap = document.getElementById('cam-wrap');
@@ -535,14 +525,12 @@ const floatingPanel = document.getElementById('floating-panel');
 const answerRowEl = document.getElementById('answer-row');
 const wordTrayEl = document.getElementById('word-tray');
 const questionBanner = document.getElementById('question-banner');
-const cursorDot = document.getElementById('cursor-dot');
 const qcountEl = document.getElementById('qcount');
 const qtextEl = document.getElementById('qtext');
 const feedbackEl = document.getElementById('ar-feedback');
 const feedbackTextEl = document.getElementById('feedback-text');
 const btnContinue = document.getElementById('btn-continue');
 const badgeFace = document.getElementById('badge-face');
-const badgeHand = document.getElementById('badge-hand');
 const badgeStreak = document.getElementById('badge-streak');
 const xpToastEl = document.getElementById('xp-toast');
 const xpTotalEl = document.getElementById('xp-total');
@@ -561,19 +549,17 @@ const smVerbAuxSpan = document.getElementById('sm-verb-aux');
 const smVerbPartSpan = document.getElementById('sm-verb-part');
 let smTimer = null;
 
-let currentLevel = null;
+let currentLevel = LEVELS[0];
 let qIndex = 0;
-let score = 0;
+let results = [];   // per question: 'correct' | 'wrong' | 'skipped' | undefined (not tried yet); the latest attempt counts
+let xpGiven = [];   // XP is awarded once per question per run, so retries can't farm points
 let streak = 0;
 let answered = false;
-let handLandmarker = null;
 let faceLandmarker = null;
 let modelsReady = false;
 let stream = null;
 let lastVideoTime = -1;
-let cursor = { x: null, y: null, visible: false };
 let headAnchor = { x: null, y: null };
-let hover = { el: null, since: 0 };
 let currentSpec = null; // { answer: [...words], bank: [...shuffled words] } for the current question
 let rafId = null;
 
@@ -634,29 +620,31 @@ function updateStreakBadge(){
 
 // Sentence Mover: animates the active→passive rearrangement (object moves to
 // subject position, subject moves to/drops from the "by" slot) and crossfades
-// the verb from its active tense (blue) into "aux + past participle" (amber).
+// the verb from its active form into "be-verb + past participle", using the
+// same purple / green / blue / orange role colours used everywhere.
 function resetSentenceMover(){
   if(smTimer){ clearTimeout(smTimer); smTimer = null; }
   smStage.dataset.state = 'active';
   smLabel.textContent = 'ACTIVE VOICE';
   smSubjectEl.style.order = '';
   smObjectEl.style.order = '';
+  smVerbEl.style.order = '';
   smSubjectEl.style.transition = smObjectEl.style.transition = smVerbEl.style.transition = '';
   smSubjectEl.style.transform = smObjectEl.style.transform = smVerbEl.style.transform = '';
-  smSubjectEl.classList.remove('sm-drop');
+  smSubjectEl.classList.remove('sm-drop', 'sm-optional');
   smObjectEl.classList.remove('sm-role-subject');
   smVerbActiveSpan.style.opacity = '1';
   smVerbPassiveSpan.style.opacity = '0';
 }
 
-function playSentenceMove(move){
+function playSentenceMove(move, q){
   resetSentenceMover();
   if(!move){ sentenceMoverEl.classList.remove('show'); return; }
   smSubjectEl.textContent = move.subject;
   smObjectEl.textContent = move.object;
-  smVerbActiveSpan.textContent = move.verb;
+  smVerbActiveSpan.innerHTML = withEnding(move.verb, q.activeEnding, 'end-past');
   smVerbAuxSpan.textContent = move.aux;
-  smVerbPartSpan.textContent = move.participle;
+  smVerbPartSpan.innerHTML = withEnding(move.participle, q.participleEnding, 'end-part');
   sentenceMoverEl.classList.add('show');
 
   smTimer = setTimeout(() => {
@@ -666,10 +654,12 @@ function playSentenceMove(move){
     smLabel.textContent = 'PASSIVE VOICE';
     smStage.dataset.state = 'passive';
     smObjectEl.style.order = '1';
+    smVerbEl.style.order = '2';
     smSubjectEl.style.order = '3';
     smObjectEl.classList.add('sm-role-subject');
     if(move.byAgent){
-      smSubjectEl.textContent = 'by ' + move.subject;
+      smSubjectEl.textContent = 'by ' + move.subject.charAt(0).toLowerCase() + move.subject.slice(1);
+      smSubjectEl.classList.add('sm-optional');
     } else {
       smSubjectEl.classList.add('sm-drop');
     }
@@ -700,51 +690,26 @@ function showScreen(name){
   screens[name].classList.add('active');
 }
 
-function renderLevelList(){
+function renderHome(){
   updateXPDisplay();
-  const stars = getStars();
-  levelList.innerHTML = '';
-  LEVELS.forEach(level => {
-    const card = document.createElement('button');
-    card.className = 'level-card' + (level.accent === 'red' ? ' accent-red' : '');
-    const bestStars = stars[level.id] || 0;
-    const starsBadge = bestStars > 0 ? `<span class="badge-done">${'★'.repeat(bestStars)}${'☆'.repeat(3 - bestStars)}</span>` : '';
-    card.innerHTML = `<h3><span class="level-icon">${level.icon || '✨'}</span>${level.title}${starsBadge}</h3><p>${level.tagline}</p>`;
-    card.addEventListener('click', () => openGate(level.id));
-    levelList.appendChild(card);
-  });
-}
-
-function openGate(id){
-  currentLevel = LEVELS.find(l => l.id === id);
-  gateTitle.textContent = currentLevel.title;
+  const best = getStars()[currentLevel.id] || 0;
+  document.getElementById('best-stars').textContent = best > 0 ? 'Best: ' + '★'.repeat(best) + '☆'.repeat(3 - best) : '';
   gateStatus.textContent = '';
   gateStatus.classList.remove('error');
-  showScreen('gate');
 }
-
-btnBackGate.addEventListener('click', () => { stopEverything(); showScreen('levels'); renderLevelList(); });
 
 async function ensureModels(){
   if(modelsReady) return true;
   gateLoading.classList.add('show');
   try{
-    gateLoadingText.textContent = 'Loading pointing & face tracking…';
+    gateLoadingText.textContent = 'Loading face tracking…';
     const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm');
-    async function createHand(delegate){
-      return HandLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate },
-        runningMode: 'VIDEO', numHands: 1
-      });
-    }
     async function createFace(delegate){
       return FaceLandmarker.createFromOptions(vision, {
         baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate },
         runningMode: 'VIDEO', numFaces: 1
       });
     }
-    try{ handLandmarker = await createHand('GPU'); }
-    catch(e){ handLandmarker = await createHand('CPU'); }
     try{ faceLandmarker = await createFace('GPU'); }
     catch(e){ faceLandmarker = await createFace('CPU'); }
     modelsReady = true;
@@ -753,7 +718,7 @@ async function ensureModels(){
   }catch(err){
     gateLoading.classList.remove('show');
     gateStatus.classList.add('error');
-    gateStatus.textContent = 'Could not load the pointing/face tracker (needs an internet connection). You can still play with tap-to-select once the camera starts.';
+    gateStatus.textContent = 'Could not load face tracking (needs an internet connection). You can still play — the question will just sit in the middle of the screen.';
     return false;
   }
 }
@@ -782,7 +747,9 @@ function stopEverything(){
 }
 
 function startLevel(){
-  qIndex = 0; score = 0; streak = 0;
+  qIndex = 0; streak = 0;
+  results = new Array(currentLevel.questions.length).fill(undefined);
+  xpGiven = new Array(currentLevel.questions.length).fill(false);
   updateStreakBadge();
   showScreen('ar');
   showQuestion();
@@ -800,6 +767,101 @@ function startLevel(){
 // grammar-relevant `distractors` in the tray) or falls back to treating
 // each multiple-choice `option` as a single touchable piece (every other
 // question), so every question in the game answers with the same gesture.
+// Sentence-role colour coding (same colours in the question, the checked
+// answer and the Sentence Mover diagram):
+//   purple = the doer      (keeps its colour when it becomes "by the teacher")
+//   green  = the receiver  (moves from the end to the front)
+//   blue   = the main verb (same verb, new form: marked → marked, broke → broken)
+//   orange = the be-verb   (new in the passive; it carries the tense)
+function escHTML(t){ return t.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+// Colour a verb's ending inside a phrase: e.g. "marked" -> mark + <yellow>ed</yellow>
+function withEnding(text, ending, cls){
+  return text.split(' ').map(w => {
+    const m = w.match(/^(.*?)([.,!?;:]*)$/);
+    const core = m[1], punct = m[2];
+    if(ending && core.toLowerCase() === ending.word && core.toLowerCase().endsWith(ending.end)){
+      const stem = core.slice(0, core.length - ending.end.length);
+      return `${escHTML(stem)}<span class="${cls}">${escHTML(core.slice(stem.length))}</span>${escHTML(punct)}`;
+    }
+    return escHTML(w);
+  }).join(' ');
+}
+function roleSpan(text, role, q){
+  if(!role) return escHTML(text);
+  const inner = (role === 'verb' && q) ? withEnding(text, q.activeEnding, 'end-past') : escHTML(text);
+  return `<span class="r-${role}">${inner}</span>`;
+}
+function renderActive(q){
+  // segments: [text, role?]; a segment starting with punctuation hugs the previous one
+  return q.activeRoles.map(([text, role], i) =>
+    (i > 0 && !/^[.,!?;:]/.test(text) ? ' ' : '') + roleSpan(text, role, q)
+  ).join('');
+}
+
+// ---- Explaining mistakes -------------------------------------------------
+function findPhrase(arr, phrase){
+  for(let i = 0; i + phrase.length <= arr.length; i++){
+    if(phrase.every((w, j) => arr[i + j].toLowerCase() === w.toLowerCase())) return i;
+  }
+  return -1;
+}
+function wordsWithRole(q, role){ return q.answerWords.filter((w, i) => q.answerRoles[i] === role); }
+function quote(words){ return '"' + words.join(' ') + '"'; }
+
+// Returns plain-language reasons why the built sentence is wrong (most useful first)
+function diagnose(q, built){
+  const reasons = [];
+  // 1. picked a wrong word from the tray
+  let usedWrongWord = false;
+  (q.distractors || []).forEach(d => {
+    const used = built.filter(w => w === d).length;
+    const needed = q.answerWords.filter(w => w === d).length;
+    if(used > needed && q.why && q.why[d]){ reasons.push(q.why[d]); usedWrongWord = true; }
+  });
+  // 2. receiver must lead
+  const rec = wordsWithRole(q, 'rec');
+  if(findPhrase(built, rec) !== 0){
+    reasons.push(`The receiver ${quote(rec)} moves to the front — it becomes the new subject of the sentence.`);
+  }
+  // 3. verb group must stay together: be-verb first, then the past participle
+  const verbGroup = q.answerWords.filter((w, i) => q.answerRoles[i] === 'be' || q.answerRoles[i] === 'verb');
+  const vgPos = findPhrase(built, verbGroup);
+  if(vgPos === -1 && !usedWrongWord){
+    reasons.push(`The verb group stays together in this order: ${quote(verbGroup)} — the be-verb first, then the past participle.`);
+  }
+  // 4. "by" + doer is one phrase
+  const doer = wordsWithRole(q, 'doer');
+  if(doer.length && findPhrase(built, doer) === -1){
+    reasons.push(`${quote(doer)} is one phrase: "by" + the doer stay together, after the verb.`);
+  }
+  // 5. extra detail (time / "for ...") doesn't move: it stays after the verb, at the end
+  if(q.extra){
+    const pos = findPhrase(built, q.extra.words);
+    const atEnd = pos !== -1 && pos + q.extra.words.length === built.length;
+    const afterVerb = pos !== -1 && vgPos !== -1 && pos > vgPos;
+    if(!atEnd && !afterVerb) reasons.push(q.extra.why);
+  }
+  if(!reasons.length) reasons.push('Some words are in the wrong place — compare your sentence with the correct one below.');
+  return reasons.slice(0, 3);
+}
+
+// Correct sentence, colour-coded by role, with the "by ..." phrase in a dashed box
+function renderAnswerHTML(q){
+  const out = [];
+  let i = 0;
+  while(i < q.answerWords.length){
+    const role = q.answerRoles[i];
+    let j = i;
+    while(j < q.answerWords.length && q.answerRoles[j] === role) j++;
+    const text = q.answerWords.slice(i, j).join(' ');
+    const inner = role === 'verb' ? withEnding(text, q.participleEnding, 'end-part') : escHTML(text);
+    if(!role) out.push(inner);
+    else out.push(`<span class="r-${role}${role === 'doer' ? ' optional-inline' : ''}">${inner}</span>`);
+    i = j;
+  }
+  return out.join(' ') + '.';
+}
+
 function shuffle(arr){
   for(let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -859,7 +921,10 @@ function showQuestion(){
   sentenceMoverEl.classList.remove('show');
   const q = currentLevel.questions[qIndex];
   qcountEl.textContent = `${currentLevel.title} · Question ${qIndex + 1} of ${currentLevel.questions.length}`;
-  qtextEl.textContent = q.prompt;
+  updateNav();
+  qtextEl.innerHTML = q.active
+    ? `<span class="q-lead">Turn this into the passive voice:</span>${renderActive(q)}`
+    : escHTML(q.prompt);
 
   currentSpec = getBuildSpec(q);
   answerRowEl.innerHTML = '';
@@ -878,41 +943,107 @@ function evaluateAnswer(){
   answered = true;
   const q = currentLevel.questions[qIndex];
   const tokens = Array.from(answerRowEl.children);
-  let allCorrect = true;
+  const built = tokens.map(t => t.textContent);
+  // The main answer plus any other acceptable word orders
+  const variants = [ { words: currentSpec.answer, roles: q.answerRoles || [] } ].concat(q.alternates || []);
+  const match = variants.find(v => v.words.length === built.length && v.words.every((w, i) => w === built[i]));
+  const ref = match || variants[0];
+  const allCorrect = !!match;
   tokens.forEach((t, i) => {
-    const right = t.textContent === currentSpec.answer[i];
+    const right = t.textContent === ref.words[i];
     t.classList.add(right ? 'correct' : 'incorrect');
-    if(!right) allCorrect = false;
+    const role = ref.roles[i];
+    if(right && role) t.classList.add('r-' + role);
+    if(right && role === 'verb') t.innerHTML = withEnding(t.textContent, q.participleEnding, 'end-part');
   });
   wordTrayEl.classList.add('hide');
+  // Box the "by ..." doer phrase with a dashed outline to show it's optional
+  if(ref.roles.length){
+    const doerIdx = ref.roles.map((r, i) => r === 'doer' ? i : -1).filter(i => i >= 0);
+    if(doerIdx.length && doerIdx.every(i => tokens[i] && tokens[i].classList.contains('correct'))){
+      const group = document.createElement('div');
+      group.className = 'optional-group';
+      answerRowEl.insertBefore(group, tokens[doerIdx[0]]);
+      doerIdx.forEach(i => group.appendChild(tokens[i]));
+    }
+  }
+  results[qIndex] = allCorrect ? 'correct' : 'wrong';
   if(allCorrect){
-    score++;
-    streak++;
-    addXP(10);
-    showXPToast(10, tokens[0]);
+    if(!xpGiven[qIndex]){   // first time this question is solved this run: streak + XP
+      streak++;
+      xpGiven[qIndex] = true;
+      addXP(10);
+      showXPToast(10, tokens[0]);
+    }
   } else {
     streak = 0;
   }
   updateStreakBadge();
-  feedbackTextEl.textContent = (allCorrect ? '✅ ' : '❌ ') + q.explain;
+  updateNav();
+  if(allCorrect){
+    feedbackTextEl.innerHTML = `<span class="fb-head">✅ ${match.note ? 'Nice!' : 'Correct!'}</span>`
+      + escHTML(match.note || q.explain)
+      + (match.note ? `<span class="fb-answer"><small>Usual order</small>${renderAnswerHTML(q)}</span>` : '');
+  } else if(q.answerRoles){
+    const reasons = diagnose(q, built);
+    feedbackTextEl.innerHTML = `<span class="fb-head">❌ Not quite — here's why:</span>`
+      + `<ul class="fb-why">${reasons.map(r => `<li>${escHTML(r)}</li>`).join('')}</ul>`
+      + `<span class="fb-answer"><small>Correct</small>${renderAnswerHTML(q)}</span>`;
+  } else {
+    feedbackTextEl.textContent = '❌ ' + q.explain;
+  }
   if(currentLevel.id === 'passive-voice' && q.move){
-    playSentenceMove(q.move);
+    playSentenceMove(q.move, q);
   } else {
     sentenceMoverEl.classList.remove('show');
   }
   feedbackEl.classList.add('show');
-  btnContinue.classList.add('pointable');
 }
 
-btnContinue.addEventListener('click', () => {
-  if(!answered) return;
-  qIndex++;
-  if(qIndex >= currentLevel.questions.length){
-    finishLevel();
+// ---- Question navigation ----
+const btnPrev = document.getElementById('btn-prev');
+const btnRetryQ = document.getElementById('btn-retry-q');
+const btnNext = document.getElementById('btn-next');
+
+function isLastQuestion(){ return qIndex >= currentLevel.questions.length - 1; }
+
+function updateNav(){
+  btnPrev.disabled = qIndex === 0;
+  const last = isLastQuestion();
+  if(answered){
+    btnNext.textContent = last ? 'Finish ▶' : 'Next ▶';
+    btnNext.classList.add('primary');
+    btnNext.setAttribute('aria-label', last ? 'Finish and see results' : 'Go to the next question');
   } else {
-    showQuestion();
+    btnNext.textContent = last ? 'Skip & finish ▶' : 'Skip ▶';
+    btnNext.classList.remove('primary');
+    btnNext.setAttribute('aria-label', last ? 'Skip this question and finish' : 'Skip to the next question');
   }
-});
+  btnContinue.textContent = last ? 'Finish →' : 'Continue →';
+}
+
+function goNext(){
+  if(!answered){
+    // skipping: only mark as skipped if it hasn't been answered before
+    if(results[qIndex] === undefined) results[qIndex] = 'skipped';
+    streak = 0;
+    updateStreakBadge();
+  }
+  if(isLastQuestion()){ finishLevel(); return; }
+  qIndex++;
+  showQuestion();
+}
+function goPrev(){
+  if(qIndex === 0) return;
+  qIndex--;
+  showQuestion();
+}
+function retryQuestion(){ showQuestion(); }
+
+btnNext.addEventListener('click', goNext);
+btnPrev.addEventListener('click', goPrev);
+btnRetryQ.addEventListener('click', retryQuestion);
+btnContinue.addEventListener('click', () => { if(answered) goNext(); });
 
 function finishLevel(){
   stopEverything();
@@ -925,6 +1056,8 @@ function finishLevel(){
   resetSentenceMover();
   sentenceMoverEl.classList.remove('show');
   const total = currentLevel.questions.length;
+  const score = results.filter(r => r === 'correct').length;
+  const skipped = results.filter(r => r === 'skipped' || r === undefined).length;
   const allCorrect = score === total;
   const earnedStars = starsForScore(score, total);
   const prevBest = (getStars()[currentLevel.id] || 0);
@@ -937,8 +1070,8 @@ function finishLevel(){
   document.getElementById('results-emoji').textContent = allCorrect ? '🏆' : (score >= total * 0.6 ? '🙂' : '💪');
   resultsTitle.textContent = allCorrect ? 'Nailed it!' : 'Level complete';
   renderStars(resultsStarsEl, earnedStars);
-  resultsScore.textContent = `You got ${score} out of ${total} correct.` + (earnedStars > prevBest ? ' New best!' : '');
-  resultsXpEl.textContent = `+${score * 10 + bonus} XP earned` + (bonus ? ' (includes +20 perfect-run bonus)' : '') + ` · ${getXP()} XP total`;
+  resultsScore.textContent = `You got ${score} out of ${total} correct` + (skipped ? ` (${skipped} skipped).` : '.') + (earnedStars > prevBest ? ' New best!' : '');
+  resultsXpEl.textContent = `+${xpGiven.filter(Boolean).length * 10 + bonus} XP earned` + (bonus ? ' (includes +20 perfect-run bonus)' : '') + ` · ${getXP()} XP total`;
   launchConfetti(allCorrect);
   showScreen('results');
 }
@@ -958,8 +1091,7 @@ function launchConfetti(big){
   }
 }
 
-btnRetry.addEventListener('click', () => openGate(currentLevel.id));
-btnResultsBack.addEventListener('click', () => { showScreen('levels'); renderLevelList(); });
+btnRetry.addEventListener('click', () => { showScreen('home'); renderHome(); });
 
 function mapPoint(nx, ny){
   const vw = video.videoWidth, vh = video.videoHeight;
@@ -988,7 +1120,7 @@ function updateChipPosition(){
   else { x = camWrap.clientWidth / 2; y = camWrap.clientHeight * 0.5; }
   const panelH = floatingPanel.offsetHeight;
   const panelW = floatingPanel.offsetWidth || 10;
-  y = Math.max(y, panelH + 52); // keep the panel's top edge clear of the tracking badges + question-count bar
+  y = Math.max(y, panelH + 100); // keep the panel's top edge clear of the badges, question-count bar and nav buttons
   y = Math.min(y, camWrap.clientHeight - 14); // keep the panel from being pushed off the bottom
   const halfW = panelW / 2;
   x = Math.min(Math.max(x, halfW + 8), camWrap.clientWidth - halfW - 8);
@@ -996,61 +1128,6 @@ function updateChipPosition(){
   floatingPanel.style.top = y + 'px';
 }
 
-// Hand-tracking touch: the instant the fingertip cursor overlaps a word chip
-// in the tray, that word is selected — same instant, no-dwell touch used
-// everywhere else in the game. There's nothing to carry or drop; touching a
-// word is the whole gesture. (The Continue button still uses a brief dwell,
-// via hitTest below, since it's a single deliberate confirm rather than a
-// rapid multi-touch sequence.)
-function updateWordTray(){
-  if(answered){
-    if(btnContinue.classList.contains('pointable')) hitTest([btnContinue]);
-    return;
-  }
-  if(!cursor.visible) return;
-  const chips = Array.from(wordTrayEl.querySelectorAll('.word-chip'));
-  for(const chip of chips){
-    const r = localRectOf(chip);
-    if(cursor.x >= r.left && cursor.x <= r.right && cursor.y >= r.top && cursor.y <= r.bottom){
-      selectWord(chip);
-      break;
-    }
-  }
-}
-
-function hitTest(elements){
-  if(!cursor.visible){ clearHover(); return; }
-  let target = null;
-  for(const el of elements){
-    const r = localRectOf(el);
-    if(cursor.x >= r.left && cursor.x <= r.right && cursor.y >= r.top && cursor.y <= r.bottom){ target = el; break; }
-  }
-  if(target !== hover.el){
-    clearHover();
-    if(target){ hover.el = target; hover.since = performance.now(); target.classList.add('hovered'); }
-  }
-  if(hover.el){
-    const progress = Math.min(1, (performance.now() - hover.since) / DWELL_MS);
-    const ring = hover.el.querySelector('.ring');
-    if(ring) ring.style.background = `conic-gradient(#fff ${progress * 360}deg, transparent 0)`;
-    else hover.el.style.boxShadow = `0 0 0 4px rgba(255,255,255,${progress})`;
-    if(progress >= 1){
-      const elToClick = hover.el;
-      clearHover();
-      elToClick.click();
-    }
-  }
-}
-
-function clearHover(){
-  if(hover.el){
-    hover.el.classList.remove('hovered');
-    const ring = hover.el.querySelector('.ring');
-    if(ring) ring.style.background = '';
-    hover.el.style.boxShadow = '';
-  }
-  hover.el = null; hover.since = 0;
-}
 
 function loop(){
   rafId = requestAnimationFrame(loop);
@@ -1077,30 +1154,10 @@ function loop(){
     }catch(e){}
   }
 
-  if(handLandmarker){
-    try{
-      const res = handLandmarker.detectForVideo(video, now);
-      if(res.landmarks && res.landmarks.length){
-        badgeHand.classList.add('live');
-        const tip = res.landmarks[0][8];
-        const pt = mapPoint(1 - tip.x, tip.y);
-        cursor.x = pt.x; cursor.y = pt.y; cursor.visible = true;
-        cursorDot.style.display = 'block';
-        cursorDot.style.left = pt.x + 'px';
-        cursorDot.style.top = pt.y + 'px';
-      } else {
-        badgeHand.classList.remove('live');
-        cursor.visible = false;
-        cursorDot.style.display = 'none';
-      }
-    }catch(e){}
-  }
-
   updateChipPosition();
-  updateWordTray();
 }
 
-renderLevelList();
+renderHome();
 </script>
 </body>
 </html>
